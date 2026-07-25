@@ -1,0 +1,46 @@
+services:
+  ts-casawasm-app:
+    image: tailscale/tailscale:latest
+    container_name: ts-casawasm-bff
+    hostname: joep-casa-pahampang-webapp
+    environment:
+      - TS_AUTHKEY=tskey-auth-k1F8fvs35W11CNTRL-YBmi6vJsZydSRopGYc43zd9wku6cHczZS
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_EXTRA_ARGS=--advertise-tags=tag:server
+    command: >
+      sh -c "tailscaled & 
+             sleep 5; 
+             tailscale up --authkey=$$TS_AUTHKEY --hostname=joep-casa-pahampang-webapp;             
+             tailscale funnel --bg 8080; 
+             wait"
+    volumes:
+      - /dev/net/tun:/dev/net/tun
+      - ./ts-state:/var/lib/tailscale
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    restart: always
+
+  my-wasm-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GITHUB_PAT: ${GITHUB_PAT}
+    container_name: casawasm-bff-container
+    user: "root"
+    restart: always
+    network_mode: "service:ts-casawasm-app" 
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
+      - AuthApiBaseUrl=https://casa-authgateway-service.taila207b7.ts.net
+      - Jwt__Key=THIS_IS_A_32_CHAR_MINIMUM_SECRET_KEY!!
+      - Jwt__Issuer=https://casa-authgateway-service.taila207b7.ts.net
+      - Jwt__Audience=https://casa-authgateway-service.taila207b7.ts.net
+      - BackendUrl=https://pr-casa-webapp.taila207b7.ts.net
+
+    volumes:
+      - ./pr-keys:/app/App_Data/DataProtection-Keys
+    depends_on:
+      - ts-casawasm-app

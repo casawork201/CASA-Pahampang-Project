@@ -21,7 +21,8 @@
         ],
         "sources": {
           "/usr/lib/dotnet/library-packs": {},
-          "https://api.nuget.org/v3/index.json": {}
+          "https://api.nuget.org/v3/index.json": {},
+          "https://nuget.pkg.github.com/casawork201/index.json": {}
         },
         "frameworks": {
           "net10.0": {
@@ -71,6 +72,10 @@
               "target": "Package",
               "version": "[10.0.10, )",
               "autoReferenced": true
+            },
+            "TestWASM.AuthLib": {
+              "target": "Package",
+              "version": "[1.0.1, )"
             }
           },
           "imports": [
@@ -395,7 +400,8 @@
         ],
         "sources": {
           "/usr/lib/dotnet/library-packs": {},
-          "https://api.nuget.org/v3/index.json": {}
+          "https://api.nuget.org/v3/index.json": {},
+          "https://nuget.pkg.github.com/casawork201/index.json": {}
         },
         "frameworks": {
           "net10.0": {
