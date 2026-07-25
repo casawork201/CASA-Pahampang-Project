@@ -14,6 +14,7 @@
         "outputPath": "/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
+          "/home/alterego/Desktop/CASAPahampang/nuget.config",
           "/home/alterego/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [

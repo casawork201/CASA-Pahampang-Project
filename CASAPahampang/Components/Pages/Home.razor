@@ -1,7 +1,48 @@
 ﻿@page "/"
+@inject NavigationManager Navigation
 
-<PageTitle>Home</PageTitle>
+<div class="landing-container">
+    <div class="bg-collage">
+        <div class="bg-overlay"></div>
+        
+        <div class="video-grid">
+            <video autoplay loop muted playsinline class="bg-video video-1">
+                <source src="Videos/volleyball.mp4" type="video/mp4" />
+            </video>
+            <video autoplay loop muted playsinline class="bg-video video-2">
+                <source src="Videos/volleyball.mp4" type="video/mp4" />
+            </video>
+            <video autoplay loop muted playsinline class="bg-video video-3">
+                <source src="Videos/volleyball.mp4" type="video/mp4" />
+            </video>
+            <video autoplay loop muted playsinline class="bg-video video-4">
+                <source src="Videos/volleyball.mp4" type="video/mp4" />
+            </video>
+        </div>
+    </div>
 
-<h1>Hello, world!</h1>
+    <div class="content-wrapper">
+        <header class="header-branding">
+            <p class="subtitle">CENTRAL AZUCARERA DE SAN ANTONIO</p>
+            <h1 class="main-title">CASA PAHAMPANG ⚡</h1>
+            <div class="accent-line"></div>
+        </header>
 
-Welcome to your new app.
+        <footer class="action-footer">
+            <button class="btn-lets-play" @onclick="StartGame">
+                <span>LET'S PLAY</span>
+                <svg class="play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+            </button>
+        </footer>
+    </div>
+</div>
+
+@code {
+    private void StartGame()
+    {
+        // Navigate to your main game page or dashboard
+        Navigation.NavigateTo("/game");
+    }
+}
