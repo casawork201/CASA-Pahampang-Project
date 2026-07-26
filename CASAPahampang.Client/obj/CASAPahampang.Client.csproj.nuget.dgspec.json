@@ -1,28 +1,35 @@
 {
   "format": 1,
   "restore": {
-    "/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/CASAPahampang.Client.csproj": {}
+    "E:\\CASA-Pahampang-Project\\CASAPahampang.Client\\CASAPahampang.Client.csproj": {}
   },
   "projects": {
-    "/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/CASAPahampang.Client.csproj": {
+    "E:\\CASA-Pahampang-Project\\CASAPahampang.Client\\CASAPahampang.Client.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/CASAPahampang.Client.csproj",
+        "projectUniqueName": "E:\\CASA-Pahampang-Project\\CASAPahampang.Client\\CASAPahampang.Client.csproj",
         "projectName": "CASAPahampang.Client",
-        "projectPath": "/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/CASAPahampang.Client.csproj",
-        "packagesPath": "/home/alterego/.nuget/packages/",
-        "outputPath": "/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/obj/",
+        "projectPath": "E:\\CASA-Pahampang-Project\\CASAPahampang.Client\\CASAPahampang.Client.csproj",
+        "packagesPath": "C:\\Users\\youri\\.nuget\\packages\\",
+        "outputPath": "E:\\CASA-Pahampang-Project\\CASAPahampang.Client\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "/home/alterego/Desktop/CASAPahampang/nuget.config",
-          "/home/alterego/.nuget/NuGet/NuGet.Config"
+          "E:\\CASA-Pahampang-Project\\NuGet.Config",
+          "C:\\Users\\youri\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
-          "/usr/lib/dotnet/library-packs": {},
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {},
+          "https://nuget.pkg.github.com/casawork201/index.json": {},
           "https://nuget.pkg.github.com/casawork201/index.json": {}
         },
         "frameworks": {
@@ -41,7 +48,7 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.100"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net10.0": {
@@ -50,7 +57,7 @@
             "Microsoft.AspNetCore.App.Internal.Assets": {
               "suppressParent": "All",
               "target": "Package",
-              "version": "[10.0.10, )",
+              "version": "[10.0.7, )",
               "autoReferenced": true
             },
             "Microsoft.AspNetCore.Components.WebAssembly": {
@@ -59,19 +66,19 @@
             },
             "Microsoft.DotNet.HotReload.WebAssembly.Browser": {
               "target": "Package",
-              "version": "[10.0.110, )",
+              "version": "[10.0.203, )",
               "autoReferenced": true
             },
             "Microsoft.NET.ILLink.Tasks": {
               "suppressParent": "All",
               "target": "Package",
-              "version": "[10.0.10, )",
+              "version": "[10.0.7, )",
               "autoReferenced": true
             },
             "Microsoft.NET.Sdk.WebAssembly.Pack": {
               "suppressParent": "All",
               "target": "Package",
-              "version": "[10.0.10, )",
+              "version": "[10.0.7, )",
               "autoReferenced": true
             },
             "TestWASM.AuthLib": {
@@ -93,7 +100,7 @@
           "downloadDependencies": [
             {
               "name": "Microsoft.NETCore.App.Runtime.Mono.browser-wasm",
-              "version": "[10.0.10, 10.0.10]"
+              "version": "[10.0.7, 10.0.7]"
             }
           ],
           "frameworkReferences": {
@@ -101,7 +108,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/10.0.110/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.203/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",

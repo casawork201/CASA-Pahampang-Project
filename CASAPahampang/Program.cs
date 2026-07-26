@@ -7,6 +7,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
 
+builder.Services.AddHttpClient();
+builder.Services.AddControllers();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -25,6 +28,7 @@ app.UseHttpsRedirection();
 
 app.UseAntiforgery();
 
+app.MapControllers();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveWebAssemblyRenderMode()

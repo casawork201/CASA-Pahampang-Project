@@ -1,0 +1,54 @@
+﻿@page "/login"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using TestWASM.AuthLib.Services
+@inject AuthService AuthService
+@inject NavigationManager Nav
+
+<h3>Login</h3>
+
+<EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+    <div class="mb-2">
+        <label>Email</label>
+        <InputText class="form-control" @bind-Value="loginModel.Email" />
+    </div>
+    <div class="mb-2">
+        <label>Password</label>
+        <InputText type="password" class="form-control" @bind-Value="loginModel.Password" />
+    </div>
+    <button class="btn btn-primary" type="submit" disabled="@isBusy">Login</button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <p class="text-danger mt-2">@errorMessage</p>
+}
+
+@code {
+    private LoginModel loginModel = new();
+    private string? errorMessage;
+    private bool isBusy;
+
+    private async Task HandleLogin()
+    {
+        isBusy = true;
+        errorMessage = null;
+
+        var (success, error) = await AuthService.LoginAsync(loginModel.Email, loginModel.Password);
+
+        if (success)
+        {
+            Nav.NavigateTo("/");
+        }
+        else
+        {
+            errorMessage = error ?? "Login failed";
+        }
+        isBusy = false;
+    }
+
+    public class LoginModel
+    {
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
+}

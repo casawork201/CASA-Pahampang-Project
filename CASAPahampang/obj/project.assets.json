@@ -2,7 +2,7 @@
   "version": 3,
   "targets": {
     "net10.0": {
-      "Microsoft.AspNetCore.App.Internal.Assets/10.0.10": {
+      "Microsoft.AspNetCore.App.Internal.Assets/10.0.7": {
         "type": "package",
         "build": {
           "build/Microsoft.AspNetCore.App.Internal.Assets.props": {},
@@ -69,7 +69,7 @@
           "buildTransitive/net8.0/_._": {}
         }
       },
-      "Microsoft.DotNet.HotReload.WebAssembly.Browser/10.0.110": {
+      "Microsoft.DotNet.HotReload.WebAssembly.Browser/10.0.203": {
         "type": "package",
         "compile": {
           "lib/net10.0/Microsoft.DotNet.HotReload.WebAssembly.Browser.dll": {}
@@ -200,7 +200,7 @@
         "framework": ".NETCoreApp,Version=v10.0",
         "dependencies": {
           "Microsoft.AspNetCore.Components.WebAssembly": "10.0.10",
-          "Microsoft.DotNet.HotReload.WebAssembly.Browser": "10.0.110",
+          "Microsoft.DotNet.HotReload.WebAssembly.Browser": "10.0.203",
           "TestWASM.AuthLib": "1.0.1"
         },
         "compile": {
@@ -213,10 +213,10 @@
     }
   },
   "libraries": {
-    "Microsoft.AspNetCore.App.Internal.Assets/10.0.10": {
-      "sha512": "8k0KoYKvNrSqP8E3oDJMBVKavlTEE6BacdLGtEDcxv9Hz0XxWFkD6JdLJsxXUlGeAfZ6YfvWmxKenl73qeCTSA==",
+    "Microsoft.AspNetCore.App.Internal.Assets/10.0.7": {
+      "sha512": "ao3i+ks0uOQ7FWacI1hqHkUczebmXrGkUB63Xhkc34QbSzG9nYBlDv9v5l6rtCrHMsDW+13kZlpJrSj1HXddqg==",
       "type": "package",
-      "path": "microsoft.aspnetcore.app.internal.assets/10.0.10",
+      "path": "microsoft.aspnetcore.app.internal.assets/10.0.7",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -232,7 +232,7 @@
         "build/Microsoft.AspNetCore.App.Internal.Assets.targets",
         "buildMultiTargeting/Microsoft.AspNetCore.App.Internal.Assets.targets",
         "buildTransitive/Microsoft.AspNetCore.App.Internal.Assets.targets",
-        "microsoft.aspnetcore.app.internal.assets.10.0.10.nupkg.sha512",
+        "microsoft.aspnetcore.app.internal.assets.10.0.7.nupkg.sha512",
         "microsoft.aspnetcore.app.internal.assets.nuspec"
       ]
     },
@@ -314,10 +314,10 @@
         "useSharedDesignerContext.txt"
       ]
     },
-    "Microsoft.DotNet.HotReload.WebAssembly.Browser/10.0.110": {
-      "sha512": "v2QuCGg7GLcuILPU+S57gi2bnLMcROOBFvLjqFKb3fF420eimHOmmZdALkRkd+qMku83SaGLy2bsL8Z1WFWbVw==",
+    "Microsoft.DotNet.HotReload.WebAssembly.Browser/10.0.203": {
+      "sha512": "OFnGv+vIMJdTX9U1gTIwOeE3isTt5MSy+hFpRvXceYZ2TBadvxWunKL1FHMBtY/fRXbJTtBKhByybknDQwhwgw==",
       "type": "package",
-      "path": "microsoft.dotnet.hotreload.webassembly.browser/10.0.110",
+      "path": "microsoft.dotnet.hotreload.webassembly.browser/10.0.203",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -328,7 +328,7 @@
         "buildMultiTargeting/Microsoft.DotNet.HotReload.WebAssembly.Browser.props",
         "buildTransitive/Microsoft.DotNet.HotReload.WebAssembly.Browser.props",
         "lib/net10.0/Microsoft.DotNet.HotReload.WebAssembly.Browser.dll",
-        "microsoft.dotnet.hotreload.webassembly.browser.10.0.110.nupkg.sha512",
+        "microsoft.dotnet.hotreload.webassembly.browser.10.0.203.nupkg.sha512",
         "microsoft.dotnet.hotreload.webassembly.browser.nuspec",
         "staticwebassets/Microsoft.DotNet.HotReload.WebAssembly.Browser.99zm1jdh75.lib.module.js"
       ]
@@ -505,31 +505,38 @@
   "projectFileDependencyGroups": {
     "net10.0": [
       "CASAPahampang.Client >= 1.0.0",
-      "Microsoft.AspNetCore.App.Internal.Assets >= 10.0.10",
+      "Microsoft.AspNetCore.App.Internal.Assets >= 10.0.7",
       "Microsoft.AspNetCore.Components.WebAssembly.Server >= 10.0.10"
     ]
   },
   "packageFolders": {
-    "/home/alterego/.nuget/packages/": {}
+    "C:\\Users\\youri\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/alterego/Desktop/CASAPahampang/CASAPahampang/CASAPahampang.csproj",
+      "projectUniqueName": "E:\\CASA-Pahampang-Project\\CASAPahampang\\CASAPahampang.csproj",
       "projectName": "CASAPahampang",
-      "projectPath": "/home/alterego/Desktop/CASAPahampang/CASAPahampang/CASAPahampang.csproj",
-      "packagesPath": "/home/alterego/.nuget/packages/",
-      "outputPath": "/home/alterego/Desktop/CASAPahampang/CASAPahampang/obj/",
+      "projectPath": "E:\\CASA-Pahampang-Project\\CASAPahampang\\CASAPahampang.csproj",
+      "packagesPath": "C:\\Users\\youri\\.nuget\\packages\\",
+      "outputPath": "E:\\CASA-Pahampang-Project\\CASAPahampang\\obj\\",
       "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+      ],
       "configFilePaths": [
-        "/home/alterego/Desktop/CASAPahampang/nuget.config",
-        "/home/alterego/.nuget/NuGet/NuGet.Config"
+        "E:\\CASA-Pahampang-Project\\NuGet.Config",
+        "C:\\Users\\youri\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "net10.0"
       ],
       "sources": {
-        "/usr/lib/dotnet/library-packs": {},
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "C:\\Program Files\\dotnet\\library-packs": {},
         "https://api.nuget.org/v3/index.json": {},
         "https://nuget.pkg.github.com/casawork201/index.json": {}
       },
@@ -537,8 +544,8 @@
         "net10.0": {
           "targetAlias": "net10.0",
           "projectReferences": {
-            "/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/CASAPahampang.Client.csproj": {
-              "projectPath": "/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/CASAPahampang.Client.csproj"
+            "E:\\CASA-Pahampang-Project\\CASAPahampang.Client\\CASAPahampang.Client.csproj": {
+              "projectPath": "E:\\CASA-Pahampang-Project\\CASAPahampang.Client\\CASAPahampang.Client.csproj"
             }
           }
         }
@@ -553,7 +560,7 @@
         "auditLevel": "low",
         "auditMode": "all"
       },
-      "SdkAnalysisLevel": "10.0.100"
+      "SdkAnalysisLevel": "10.0.200"
     },
     "frameworks": {
       "net10.0": {
@@ -562,7 +569,7 @@
           "Microsoft.AspNetCore.App.Internal.Assets": {
             "suppressParent": "All",
             "target": "Package",
-            "version": "[10.0.10, )",
+            "version": "[10.0.7, )",
             "autoReferenced": true
           },
           "Microsoft.AspNetCore.Components.WebAssembly.Server": {
@@ -589,7 +596,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/10.0.110/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.203/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.AspNetCore": "(,10.0.32767]",
           "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",
