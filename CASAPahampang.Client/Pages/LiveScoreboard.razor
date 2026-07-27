@@ -1,0 +1,219 @@
+﻿@page "/scoreboard"
+
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+@using System.Timers
+@implements IDisposable
+@rendermode InteractiveWebAssembly
+@inject NavigationManager Navigation
+
+<div class="fan-scoreboard-container">
+    <header class="scoreboard-header">
+        <button class="btn-back" @onclick="GoBack" type="button">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+            Dashboard
+        </button>
+
+        <div class="tournament-title">
+            <p class="branding-sub">CENTRAL AZUCARERA DE SAN ANTONIO</p>
+            <h1>CASA PAHAMPANG BASKETBALL ⚡</h1>
+            <p class="venue-tag">📍 Main Gymnasium • Court 1</p>
+        </div>
+
+        <div class="live-status-badge @(IsLive ? "is-live" : "is-paused")">
+            <span class="status-dot"></span>
+            @(IsLive ? "LIVE" : "PAUSED")
+        </div>
+    </header>
+
+    <div class="arena-board">
+        
+        <div class="team-card team-home">
+            <div class="team-meta">
+                <img src="@Team1LogoUrl" alt="@Team1Name Logo" class="team-logo" />
+                <h2 class="team-name">@Team1Name</h2>
+                <div class="team-indicators">
+                    @if (Team1Possession)
+                    {
+                        <span class="possession-pill">POSS ◄</span>
+                    }
+                    @if (Team1Fouls >= 5)
+                    {
+                        <span class="bonus-pill">BONUS</span>
+                    }
+                </div>
+            </div>
+
+            <div class="led-score-box">
+                <span class="led-score">@Team1Score</span>
+            </div>
+
+            <div class="stats-row">
+                <div class="stat-pill">
+                    <span class="lbl">FOULS</span>
+                    <span class="val">@Team1Fouls</span>
+                </div>
+                <div class="stat-pill">
+                    <span class="lbl">TIMEOUTS</span>
+                    <span class="val">@Team1Timeouts</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="center-clock-panel">
+            <div class="period-badge">
+                <span>@PeriodText</span>
+            </div>
+
+            <div class="game-clock-card">
+                <span class="clock-label">GAME CLOCK</span>
+                <div class="led-digital-clock @(IsLive ? "running" : "stopped")">
+                    @FormatTime(GameClockSeconds)
+                </div>
+            </div>
+
+            <div class="shot-clock-card @(ShotClockSeconds <= 5 && ShotClockSeconds > 0 ? "critical" : "")">
+                <span class="clock-label">SHOT CLOCK</span>
+                <div class="led-shot-clock">
+                    @ShotClockSeconds
+                </div>
+            </div>
+        </div>
+
+        <div class="team-card team-away">
+            <div class="team-meta">
+                <img src="@Team2LogoUrl" alt="@Team2Name Logo" class="team-logo" />
+                <h2 class="team-name">@Team2Name</h2>
+                <div class="team-indicators">
+                    @if (Team2Possession)
+                    {
+                        <span class="possession-pill">► POSS</span>
+                    }
+                    @if (Team2Fouls >= 5)
+                    {
+                        <span class="bonus-pill">BONUS</span>
+                    }
+                </div>
+            </div>
+
+            <div class="led-score-box">
+                <span class="led-score">@Team2Score</span>
+            </div>
+
+            <div class="stats-row">
+                <div class="stat-pill">
+                    <span class="lbl">FOULS</span>
+                    <span class="val">@Team2Fouls</span>
+                </div>
+                <div class="stat-pill">
+                    <span class="lbl">TIMEOUTS</span>
+                    <span class="val">@Team2Timeouts</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="ticker-section">
+        <div class="ticker-header">
+            <span>🔥 RECENT PLAYS</span>
+        </div>
+        <div class="ticker-content">
+            @if (RecentEvents.Count == 0)
+            {
+                <div class="ticker-item empty">Waiting for game actions...</div>
+            }
+            else
+            {
+                <div class="ticker-list">
+                    @foreach (var evt in RecentEvents.Take(4))
+                    {
+                        <div class="ticker-item">
+                            <span class="evt-time">Q@Period @FormatTime(evt.GameClock)</span>
+                            <span class="evt-text">@evt.Message</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+
+@code {
+    public class PlayEvent
+    {
+        public int GameClock { get; set; }
+        public string Message { get; set; } = string.Empty;
+    }
+
+    private bool IsLive = true;
+
+    private string Team1Name = "Tigers";
+    private string Team1LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Tigers";
+    private int Team1Score = 88;
+    private int Team1Fouls = 3;
+    private int Team1Timeouts = 2;
+    private bool Team1Possession = true;
+
+    private string Team2Name = "Eagles";
+    private string Team2LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Eagles";
+    private int Team2Score = 82;
+    private int Team2Fouls = 5;
+    private int Team2Timeouts = 1;
+    private bool Team2Possession = false;
+
+    private int Period = 4;
+    private string PeriodText => Period switch
+    {
+        1 => "1ST QUARTER",
+        2 => "2ND QUARTER",
+        3 => "3RD QUARTER",
+        4 => "4TH QUARTER",
+        _ => $"OVERTIME {Period - 4}"
+    };
+
+    private int GameClockSeconds = 165; // 02:45
+    private int ShotClockSeconds = 18;
+
+    private Timer? AutoRefreshTimer;
+
+    private List<PlayEvent> RecentEvents = new()
+    {
+        new PlayEvent { GameClock = 172, Message = "Tigers #23 made a 3-point field goal! 🎯" },
+        new PlayEvent { GameClock = 195, Message = "Eagles #10 made 2 free throws. 🏀" },
+        new PlayEvent { GameClock = 210, Message = "Personal foul on Tigers #7. 🚨" }
+    };
+
+    protected override void OnInitialized()
+    {
+        AutoRefreshTimer = new Timer(1000);
+        AutoRefreshTimer.Elapsed += (s, e) =>
+        {
+            if (IsLive && GameClockSeconds > 0)
+            {
+                GameClockSeconds--;
+                if (ShotClockSeconds > 0) ShotClockSeconds--;
+                InvokeAsync(StateHasChanged);
+            }
+        };
+        AutoRefreshTimer.Start();
+    }
+
+    private string FormatTime(int totalSeconds)
+    {
+        int minutes = totalSeconds / 60;
+        int seconds = totalSeconds % 60;
+        return $"{minutes:D2}:{seconds:D2}";
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/dashboard");
+    }
+
+    public void Dispose()
+    {
+        AutoRefreshTimer?.Stop();
+        AutoRefreshTimer?.Dispose();
+    }
+}

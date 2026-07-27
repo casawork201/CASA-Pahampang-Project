@@ -4,21 +4,20 @@
     <RestoreSuccess Condition=" '$(RestoreSuccess)' == '' ">True</RestoreSuccess>
     <RestoreTool Condition=" '$(RestoreTool)' == '' ">NuGet</RestoreTool>
     <ProjectAssetsFile Condition=" '$(ProjectAssetsFile)' == '' ">$(MSBuildThisFileDirectory)project.assets.json</ProjectAssetsFile>
-    <NuGetPackageRoot Condition=" '$(NuGetPackageRoot)' == '' ">$(UserProfile)\.nuget\packages\</NuGetPackageRoot>
-    <NuGetPackageFolders Condition=" '$(NuGetPackageFolders)' == '' ">C:\Users\youri\.nuget\packages\;C:\Program Files (x86)\Microsoft Visual Studio\Shared\NuGetPackages</NuGetPackageFolders>
+    <NuGetPackageRoot Condition=" '$(NuGetPackageRoot)' == '' ">/home/alterego/.nuget/packages/</NuGetPackageRoot>
+    <NuGetPackageFolders Condition=" '$(NuGetPackageFolders)' == '' ">/home/alterego/.nuget/packages/</NuGetPackageFolders>
     <NuGetProjectStyle Condition=" '$(NuGetProjectStyle)' == '' ">PackageReference</NuGetProjectStyle>
     <NuGetToolVersion Condition=" '$(NuGetToolVersion)' == '' ">7.0.0</NuGetToolVersion>
   </PropertyGroup>
   <ItemGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
-    <SourceRoot Include="C:\Users\youri\.nuget\packages\" />
-    <SourceRoot Include="C:\Program Files (x86)\Microsoft Visual Studio\Shared\NuGetPackages\" />
+    <SourceRoot Include="/home/alterego/.nuget/packages/" />
   </ItemGroup>
   <ImportGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
-    <Import Project="$(NuGetPackageRoot)testwasm.authlib\1.0.1\buildTransitive\TestWASM.AuthLib.props" Condition="Exists('$(NuGetPackageRoot)testwasm.authlib\1.0.1\buildTransitive\TestWASM.AuthLib.props')" />
-    <Import Project="$(NuGetPackageRoot)microsoft.dotnet.hotreload.webassembly.browser\10.0.203\buildTransitive\Microsoft.DotNet.HotReload.WebAssembly.Browser.props" Condition="Exists('$(NuGetPackageRoot)microsoft.dotnet.hotreload.webassembly.browser\10.0.203\buildTransitive\Microsoft.DotNet.HotReload.WebAssembly.Browser.props')" />
-    <Import Project="$(NuGetPackageRoot)microsoft.aspnetcore.app.internal.assets\10.0.7\build\Microsoft.AspNetCore.App.Internal.Assets.props" Condition="Exists('$(NuGetPackageRoot)microsoft.aspnetcore.app.internal.assets\10.0.7\build\Microsoft.AspNetCore.App.Internal.Assets.props')" />
+    <Import Project="$(NuGetPackageRoot)testwasm.authlib/1.0.1/buildTransitive/TestWASM.AuthLib.props" Condition="Exists('$(NuGetPackageRoot)testwasm.authlib/1.0.1/buildTransitive/TestWASM.AuthLib.props')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.dotnet.hotreload.webassembly.browser/10.0.110/buildTransitive/Microsoft.DotNet.HotReload.WebAssembly.Browser.props" Condition="Exists('$(NuGetPackageRoot)microsoft.dotnet.hotreload.webassembly.browser/10.0.110/buildTransitive/Microsoft.DotNet.HotReload.WebAssembly.Browser.props')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.aspnetcore.app.internal.assets/10.0.10/build/Microsoft.AspNetCore.App.Internal.Assets.props" Condition="Exists('$(NuGetPackageRoot)microsoft.aspnetcore.app.internal.assets/10.0.10/build/Microsoft.AspNetCore.App.Internal.Assets.props')" />
   </ImportGroup>
   <PropertyGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
-    <PkgMicrosoft_AspNetCore_Components_WebAssembly_Server Condition=" '$(PkgMicrosoft_AspNetCore_Components_WebAssembly_Server)' == '' ">C:\Users\youri\.nuget\packages\microsoft.aspnetcore.components.webassembly.server\10.0.10</PkgMicrosoft_AspNetCore_Components_WebAssembly_Server>
+    <PkgMicrosoft_AspNetCore_Components_WebAssembly_Server Condition=" '$(PkgMicrosoft_AspNetCore_Components_WebAssembly_Server)' == '' ">/home/alterego/.nuget/packages/microsoft.aspnetcore.components.webassembly.server/10.0.10</PkgMicrosoft_AspNetCore_Components_WebAssembly_Server>
   </PropertyGroup>
 </Project>

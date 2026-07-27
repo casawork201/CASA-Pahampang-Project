@@ -1,0 +1,357 @@
+﻿@page "/scorekeeper"
+
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+@using System.Timers
+@implements IDisposable
+@rendermode InteractiveWebAssembly
+@inject NavigationManager Navigation
+
+<div class="scorekeeper-container">
+    <header class="dashboard-header">
+        <div class="header-left">
+            <button class="btn-back" @onclick="GoBack" type="button">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                Back to Dashboard
+            </button>
+            <div class="header-title">
+                <p class="branding-subtitle">CENTRAL AZUCARERA DE SAN ANTONIO</p>
+                <h1>BASKETBALL SCOREKEEPER CONSOLE ⚡</h1>
+            </div>
+        </div>
+        <div class="live-badge">
+            <span class="pulse-dot"></span> LIVE SCORING IN PROGRESS
+        </div>
+    </header>
+
+    <div class="scoreboard-main">
+        <div class="team-panel team-panel-left">
+            <div class="team-header">
+                <img src="@Team1LogoUrl" alt="Team 1 Logo" class="team-logo-lg" />
+                <h2>@Team1Name</h2>
+            </div>
+            
+            <div class="big-score-display">
+                @Team1Score
+            </div>
+
+            <div class="score-controls">
+                <button class="btn-score btn-add" @onclick="() => ChangeScore(1, 1)">+1</button>
+                <button class="btn-score btn-add" @onclick="() => ChangeScore(1, 2)">+2</button>
+                <button class="btn-score btn-add" @onclick="() => ChangeScore(1, 3)">+3</button>
+                <button class="btn-score btn-sub" @onclick="() => ChangeScore(1, -1)">-1</button>
+            </div>
+
+            <div class="team-extra-controls">
+                <div class="stat-box">
+                    <span>FOULS</span>
+                    <div class="stat-counter">
+                        <button @onclick="() => ChangeFouls(1, -1)">-</button>
+                        <strong>@Team1Fouls</strong>
+                        <button @onclick="() => ChangeFouls(1, 1)">+</button>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <span>TIMEOUTS</span>
+                    <div class="stat-counter">
+                        <button @onclick="() => ChangeTimeouts(1, -1)">-</button>
+                        <strong>@Team1Timeouts</strong>
+                        <button @onclick="() => ChangeTimeouts(1, 1)">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="center-console">
+            <div class="period-box">
+                <button class="btn-period" @onclick="PreviousPeriod">◀</button>
+                <span class="period-text">@PeriodText</span>
+                <button class="btn-period" @onclick="NextPeriod">▶</button>
+            </div>
+
+            <div class="clock-card">
+                <span class="clock-label">GAME CLOCK</span>
+                <div class="digital-clock @(IsGameClockRunning ? "running" : "paused")">
+                    @FormatTime(GameClockSeconds)
+                </div>
+                <div class="clock-actions">
+                    <button class="btn-clock @(IsGameClockRunning ? "btn-pause" : "btn-start")" @onclick="ToggleGameClock">
+                        @(IsGameClockRunning ? "⏸ PAUSE" : "▶ START")
+                    </button>
+                    <button class="btn-clock btn-reset" @onclick="ResetGameClock">🔄 10:00</button>
+                </div>
+            </div>
+
+            <div class="shot-clock-card @(ShotClockSeconds <= 5 && ShotClockSeconds > 0 ? "warning" : "") @(ShotClockSeconds == 0 ? "violation" : "")">
+                <span class="clock-label">SHOT CLOCK</span>
+                <div class="shot-clock-display">
+                    @ShotClockSeconds
+                </div>
+                <div class="shot-clock-actions">
+                    <button class="btn-shot @(IsShotClockRunning ? "btn-pause" : "btn-start")" @onclick="ToggleShotClock">
+                        @(IsShotClockRunning ? "⏸" : "▶")
+                    </button>
+                    <button class="btn-shot btn-shot-24" @onclick="() => ResetShotClock(24)">24s</button>
+                    <button class="btn-shot btn-shot-14" @onclick="() => ResetShotClock(14)">14s</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="team-panel team-panel-right">
+            <div class="team-header">
+                <img src="@Team2LogoUrl" alt="Team 2 Logo" class="team-logo-lg" />
+                <h2>@Team2Name</h2>
+            </div>
+
+            <div class="big-score-display">
+                @Team2Score
+            </div>
+
+            <div class="score-controls">
+                <button class="btn-score btn-add" @onclick="() => ChangeScore(2, 1)">+1</button>
+                <button class="btn-score btn-add" @onclick="() => ChangeScore(2, 2)">+2</button>
+                <button class="btn-score btn-add" @onclick="() => ChangeScore(2, 3)">+3</button>
+                <button class="btn-score btn-sub" @onclick="() => ChangeScore(2, -1)">-1</button>
+            </div>
+
+            <div class="team-extra-controls">
+                <div class="stat-box">
+                    <span>FOULS</span>
+                    <div class="stat-counter">
+                        <button @onclick="() => ChangeFouls(2, -1)">-</button>
+                        <strong>@Team2Fouls</strong>
+                        <button @onclick="() => ChangeFouls(2, 1)">+</button>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <span>TIMEOUTS</span>
+                    <div class="stat-counter">
+                        <button @onclick="() => ChangeTimeouts(2, -1)">-</button>
+                        <strong>@Team2Timeouts</strong>
+                        <button @onclick="() => ChangeTimeouts(2, 1)">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="log-section">
+        <h3>📋 Live Action Log</h3>
+        <div class="log-box">
+            @if (ActionLogs.Count == 0)
+            {
+                <div class="empty-log">No scoring events logged yet.</div>
+            }
+            else
+            {
+                <ul>
+                    @foreach (var log in ActionLogs)
+                    {
+                        <li>
+                            <span class="log-time">[@log.Timestamp.ToString("hh:mm:ss tt")]</span>
+                            <span class="log-clock">(@FormatTime(log.GameClockTime) - Q@Period)</span>
+                            <span class="log-msg">@log.Message</span>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+</div>
+
+
+@code {
+    public class ActionLog
+    {
+        public DateTime Timestamp { get; set; } = DateTime.Now;
+        public int GameClockTime { get; set; }
+        public string Message { get; set; } = string.Empty;
+    }
+
+    // Teams State
+    private string Team1Name = "Tigers";
+    private string Team1LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Tigers";
+    private int Team1Score = 88;
+    private int Team1Fouls = 3;
+    private int Team1Timeouts = 2;
+
+    private string Team2Name = "Eagles";
+    private string Team2LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Eagles";
+    private int Team2Score = 82;
+    private int Team2Fouls = 2;
+    private int Team2Timeouts = 1;
+
+    // Period State
+    private int Period = 4;
+    private string PeriodText => Period switch
+    {
+        1 => "1ST QUARTER",
+        2 => "2ND QUARTER",
+        3 => "3RD QUARTER",
+        4 => "4TH QUARTER",
+        _ => $"OVERTIME {Period - 4}"
+    };
+
+    // Clock States
+    private int GameClockSeconds = 165; // 02:45
+    private int ShotClockSeconds = 18;
+    private bool IsGameClockRunning = false;
+    private bool IsShotClockRunning = false;
+
+    private Timer? MasterTimer;
+    private List<ActionLog> ActionLogs = new();
+
+    protected override void OnInitialized()
+    {
+        // Setup 1-second master tick
+        MasterTimer = new Timer(1000);
+        MasterTimer.Elapsed += OnTimerTick;
+        MasterTimer.AutoReset = true;
+    }
+
+    private void OnTimerTick(object? sender, ElapsedEventArgs e)
+    {
+        bool stateChanged = false;
+
+        // Process Game Clock
+        if (IsGameClockRunning && GameClockSeconds > 0)
+        {
+            GameClockSeconds--;
+            stateChanged = true;
+
+            if (GameClockSeconds == 0)
+            {
+                IsGameClockRunning = false;
+                IsShotClockRunning = false;
+                LogEvent($"⌛ End of {PeriodText}!");
+            }
+        }
+
+        // Process Shot Clock
+        if (IsShotClockRunning && ShotClockSeconds > 0)
+        {
+            ShotClockSeconds--;
+            stateChanged = true;
+
+            if (ShotClockSeconds == 0)
+            {
+                IsShotClockRunning = false;
+                LogEvent("🚨 SHOT CLOCK VIOLATION!");
+            }
+        }
+
+        if (stateChanged)
+        {
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    // Score Modifications
+    private void ChangeScore(int team, int delta)
+    {
+        if (team == 1)
+        {
+            Team1Score = Math.Max(0, Team1Score + delta);
+            LogEvent($"{Team1Name} {(delta > 0 ? $"+{delta}" : $"{delta}")} PTS (Total: {Team1Score})");
+        }
+        else
+        {
+            Team2Score = Math.Max(0, Team2Score + delta);
+            LogEvent($"{Team2Name} {(delta > 0 ? $"+{delta}" : $"{delta}")} PTS (Total: {Team2Score})");
+        }
+
+        // Auto reset shot clock to 24s on field goal/free throw points
+        if (delta > 0)
+        {
+            ResetShotClock(24);
+        }
+    }
+
+    private void ChangeFouls(int team, int delta)
+    {
+        if (team == 1) Team1Fouls = Math.Max(0, Team1Fouls + delta);
+        else Team2Fouls = Math.Max(0, Team2Fouls + delta);
+    }
+
+    private void ChangeTimeouts(int team, int delta)
+    {
+        if (team == 1) Team1Timeouts = Math.Max(0, Team1Timeouts + delta);
+        else Team2Timeouts = Math.Max(0, Team2Timeouts + delta);
+    }
+
+    // Clock Control Methods
+    private void ToggleGameClock()
+    {
+        IsGameClockRunning = !IsGameClockRunning;
+        IsShotClockRunning = IsGameClockRunning; // Sync shot clock with game clock toggle
+
+        if (IsGameClockRunning && !MasterTimer!.Enabled)
+        {
+            MasterTimer.Start();
+        }
+
+        LogEvent(IsGameClockRunning ? "▶ Game Clock Started" : "⏸ Game Clock Paused");
+    }
+
+    private void ToggleShotClock()
+    {
+        IsShotClockRunning = !IsShotClockRunning;
+    }
+
+    private void ResetGameClock()
+    {
+        IsGameClockRunning = false;
+        GameClockSeconds = 600; // 10 minutes
+        LogEvent("🔄 Game Clock Reset to 10:00");
+    }
+
+    private void ResetShotClock(int seconds)
+    {
+        ShotClockSeconds = seconds;
+        LogEvent($"⏱ Shot Clock Reset to {seconds}s");
+    }
+
+    private void NextPeriod()
+    {
+        Period++;
+        ResetGameClock();
+        ResetShotClock(24);
+    }
+
+    private void PreviousPeriod()
+    {
+        if (Period > 1)
+        {
+            Period--;
+            ResetGameClock();
+            ResetShotClock(24);
+        }
+    }
+
+    // Helpers
+    private string FormatTime(int totalSeconds)
+    {
+        int minutes = totalSeconds / 60;
+        int seconds = totalSeconds % 60;
+        return $"{minutes:D2}:{seconds:D2}";
+    }
+
+    private void LogEvent(string msg)
+    {
+        ActionLogs.Insert(0, new ActionLog
+        {
+            GameClockTime = GameClockSeconds,
+            Message = msg
+        });
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/dashboard");
+    }
+
+    public void Dispose()
+    {
+        MasterTimer?.Stop();
+        MasterTimer?.Dispose();
+    }
+}

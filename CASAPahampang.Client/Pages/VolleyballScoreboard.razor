@@ -1,0 +1,148 @@
+﻿@page "/volleyball-scoreboard"
+
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+@rendermode InteractiveWebAssembly
+@inject NavigationManager Navigation
+
+<div class="fan-scoreboard-container">
+    <header class="scoreboard-header">
+        <button class="btn-back" @onclick="GoBack" type="button">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+            Dashboard
+        </button>
+
+        <div class="tournament-title">
+            <p class="branding-sub">CENTRAL AZUCARERA DE SAN ANTONIO</p>
+            <h1>CASA PAHAMPANG VOLLEYBALL 🏐⚡</h1>
+            <p class="venue-tag">📍 Main Gymnasium • Court 2</p>
+        </div>
+
+        <div class="live-status-badge">
+            <span class="status-dot"></span> LIVE MATCH
+        </div>
+    </header>
+
+    <div class="arena-board">
+        <div class="team-card @(ServingTeam == 1 ? "serving-border" : "")">
+            <div class="team-meta">
+                <img src="@Team1LogoUrl" alt="@Team1Name Logo" class="team-logo" />
+                <h2 class="team-name">@Team1Name</h2>
+                <div class="serving-indicator">
+                    @if (ServingTeam == 1)
+                    {
+                        <span class="serve-pill">🏐 SERVING</span>
+                    }
+                </div>
+            </div>
+
+            <div class="led-score-box">
+                <span class="led-score">@Team1Score</span>
+            </div>
+
+            <div class="sets-won-row">
+                <span>SETS WON</span>
+                <strong class="sets-count">@Team1SetsWon</strong>
+            </div>
+        </div>
+
+        <div class="center-panel">
+            <div class="current-set-badge">
+                SET @CurrentSetNumber
+            </div>
+
+            <div class="set-summary-card">
+                <h3>SET SCORES</h3>
+                <div class="set-scores-list">
+                    @foreach (var set in CompletedSets)
+                    {
+                        <div class="set-row">
+                            <span class="set-num">Set @set.SetNumber</span>
+                            <span class="set-result">@set.Team1Score - @set.Team2Score</span>
+                        </div>
+                    }
+                    <div class="set-row active-set">
+                        <span class="set-num">Set @CurrentSetNumber*</span>
+                        <span class="set-result">@Team1Score - @Team2Score</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="team-card @(ServingTeam == 2 ? "serving-border" : "")">
+            <div class="team-meta">
+                <img src="@Team2LogoUrl" alt="@Team2Name Logo" class="team-logo" />
+                <h2 class="team-name">@Team2Name</h2>
+                <div class="serving-indicator">
+                    @if (ServingTeam == 2)
+                    {
+                        <span class="serve-pill">🏐 SERVING</span>
+                    }
+                </div>
+            </div>
+
+            <div class="led-score-box">
+                <span class="led-score">@Team2Score</span>
+            </div>
+
+            <div class="sets-won-row">
+                <span>SETS WON</span>
+                <strong class="sets-count">@Team2SetsWon</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="ticker-section">
+        <div class="ticker-header">
+            <span>🔥 RECENT RALLIES</span>
+        </div>
+        <div class="ticker-list">
+            @foreach (var evt in RecentEvents)
+            {
+                <div class="ticker-item">
+                    <span class="evt-time">Set @CurrentSetNumber</span>
+                    <span class="evt-text">@evt</span>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+
+@code {
+    public class CompletedSetRecord
+    {
+        public int SetNumber { get; set; }
+        public int Team1Score { get; set; }
+        public int Team2Score { get; set; }
+    }
+
+    private string Team1Name = "Lady Spikers";
+    private string Team1LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=LadySpikers";
+    private int Team1Score = 21;
+    private int Team1SetsWon = 1;
+
+    private string Team2Name = "Smashers";
+    private string Team2LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Smashers";
+    private int Team2Score = 19;
+    private int Team2SetsWon = 0;
+
+    private int ServingTeam = 1;
+    private int CurrentSetNumber = 2;
+
+    private List<CompletedSetRecord> CompletedSets = new()
+    {
+        new CompletedSetRecord { SetNumber = 1, Team1Score = 25, Team2Score = 22 }
+    };
+
+    private List<string> RecentEvents = new()
+    {
+        "Point Lady Spikers! Spike kill by #12 💥",
+        "Point Smashers! Block point by #8 🛡️",
+        "Service Ace by Lady Spikers #5 🎯"
+    };
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/dashboard");
+    }
+}

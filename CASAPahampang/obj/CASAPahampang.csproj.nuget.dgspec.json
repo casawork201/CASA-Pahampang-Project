@@ -1,35 +1,28 @@
 {
   "format": 1,
   "restore": {
-    "E:\\CASA-Pahampang-Project\\CASAPahampang\\CASAPahampang.csproj": {}
+    "/home/alterego/Desktop/CASAPahampang/CASAPahampang/CASAPahampang.csproj": {}
   },
   "projects": {
-    "E:\\CASA-Pahampang-Project\\CASAPahampang.Client\\CASAPahampang.Client.csproj": {
+    "/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/CASAPahampang.Client.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\CASA-Pahampang-Project\\CASAPahampang.Client\\CASAPahampang.Client.csproj",
+        "projectUniqueName": "/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/CASAPahampang.Client.csproj",
         "projectName": "CASAPahampang.Client",
-        "projectPath": "E:\\CASA-Pahampang-Project\\CASAPahampang.Client\\CASAPahampang.Client.csproj",
-        "packagesPath": "C:\\Users\\youri\\.nuget\\packages\\",
-        "outputPath": "E:\\CASA-Pahampang-Project\\CASAPahampang.Client\\obj\\",
+        "projectPath": "/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/CASAPahampang.Client.csproj",
+        "packagesPath": "/home/alterego/.nuget/packages/",
+        "outputPath": "/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "E:\\CASA-Pahampang-Project\\NuGet.Config",
-          "C:\\Users\\youri\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/home/alterego/Desktop/CASAPahampang/nuget.config",
+          "/home/alterego/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
+          "/usr/lib/dotnet/library-packs": {},
           "https://api.nuget.org/v3/index.json": {},
-          "https://nuget.pkg.github.com/casawork201/index.json": {},
           "https://nuget.pkg.github.com/casawork201/index.json": {}
         },
         "frameworks": {
@@ -48,7 +41,7 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.200"
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net10.0": {
@@ -57,7 +50,7 @@
             "Microsoft.AspNetCore.App.Internal.Assets": {
               "suppressParent": "All",
               "target": "Package",
-              "version": "[10.0.7, )",
+              "version": "[10.0.10, )",
               "autoReferenced": true
             },
             "Microsoft.AspNetCore.Components.WebAssembly": {
@@ -66,19 +59,19 @@
             },
             "Microsoft.DotNet.HotReload.WebAssembly.Browser": {
               "target": "Package",
-              "version": "[10.0.203, )",
+              "version": "[10.0.110, )",
               "autoReferenced": true
             },
             "Microsoft.NET.ILLink.Tasks": {
               "suppressParent": "All",
               "target": "Package",
-              "version": "[10.0.7, )",
+              "version": "[10.0.10, )",
               "autoReferenced": true
             },
             "Microsoft.NET.Sdk.WebAssembly.Pack": {
               "suppressParent": "All",
               "target": "Package",
-              "version": "[10.0.7, )",
+              "version": "[10.0.10, )",
               "autoReferenced": true
             },
             "TestWASM.AuthLib": {
@@ -100,7 +93,7 @@
           "downloadDependencies": [
             {
               "name": "Microsoft.NETCore.App.Runtime.Mono.browser-wasm",
-              "version": "[10.0.7, 10.0.7]"
+              "version": "[10.0.10, 10.0.10]"
             }
           ],
           "frameworkReferences": {
@@ -108,7 +101,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.203/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/10.0.110/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",
@@ -391,40 +384,33 @@
         }
       }
     },
-    "E:\\CASA-Pahampang-Project\\CASAPahampang\\CASAPahampang.csproj": {
+    "/home/alterego/Desktop/CASAPahampang/CASAPahampang/CASAPahampang.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\CASA-Pahampang-Project\\CASAPahampang\\CASAPahampang.csproj",
+        "projectUniqueName": "/home/alterego/Desktop/CASAPahampang/CASAPahampang/CASAPahampang.csproj",
         "projectName": "CASAPahampang",
-        "projectPath": "E:\\CASA-Pahampang-Project\\CASAPahampang\\CASAPahampang.csproj",
-        "packagesPath": "C:\\Users\\youri\\.nuget\\packages\\",
-        "outputPath": "E:\\CASA-Pahampang-Project\\CASAPahampang\\obj\\",
+        "projectPath": "/home/alterego/Desktop/CASAPahampang/CASAPahampang/CASAPahampang.csproj",
+        "packagesPath": "/home/alterego/.nuget/packages/",
+        "outputPath": "/home/alterego/Desktop/CASAPahampang/CASAPahampang/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "E:\\CASA-Pahampang-Project\\NuGet.Config",
-          "C:\\Users\\youri\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/home/alterego/Desktop/CASAPahampang/nuget.config",
+          "/home/alterego/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
+          "/usr/lib/dotnet/library-packs": {},
           "https://api.nuget.org/v3/index.json": {},
-          "https://nuget.pkg.github.com/casawork201/index.json": {},
           "https://nuget.pkg.github.com/casawork201/index.json": {}
         },
         "frameworks": {
           "net10.0": {
             "targetAlias": "net10.0",
             "projectReferences": {
-              "E:\\CASA-Pahampang-Project\\CASAPahampang.Client\\CASAPahampang.Client.csproj": {
-                "projectPath": "E:\\CASA-Pahampang-Project\\CASAPahampang.Client\\CASAPahampang.Client.csproj"
+              "/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/CASAPahampang.Client.csproj": {
+                "projectPath": "/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/CASAPahampang.Client.csproj"
               }
             }
           }
@@ -439,7 +425,7 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.200"
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net10.0": {
@@ -448,7 +434,7 @@
             "Microsoft.AspNetCore.App.Internal.Assets": {
               "suppressParent": "All",
               "target": "Package",
-              "version": "[10.0.7, )",
+              "version": "[10.0.10, )",
               "autoReferenced": true
             },
             "Microsoft.AspNetCore.Components.WebAssembly.Server": {
@@ -475,7 +461,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.203/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/10.0.110/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",

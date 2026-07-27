@@ -18,6 +18,12 @@
             <video autoplay loop muted playsinline class="bg-video video-4">
                 <source src="videos/olympic.mp4" type="video/mp4" />
             </video>
+            <video autoplay loop muted playsinline class="bg-video video-5">
+                <source src="videos/tennis.mp4" type="video/mp4" />
+            </video>
+            <video autoplay loop muted playsinline class="bg-video video-6">
+                <source src="videos/football.mp4" type="video/mp4" />
+            </video>            
         </div>
     </div>
 
@@ -29,20 +35,12 @@
         </header>
 
         <footer class="action-footer">
-            <button class="btn-lets-play" @onclick="StartGame">
+            <a class="btn-lets-play" href="/dashboard">
                 <span>LET'S PLAY</span>
                 <svg class="play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M8 5v14l11-7z"/>
                 </svg>
-            </button>
+            </a>
         </footer>
     </div>
 </div>
-
-@code {
-    private void StartGame()
-    {
-        // Navigate to your main game page or dashboard
-        Navigation.NavigateTo("/game");
-    }
-}

@@ -17,29 +17,49 @@ build_property.EnforceExtendedAnalyzerRules =
 build_property._SupportedPlatformList = browser
 build_property.RootNamespace = CASAPahampang.Client
 build_property.RootNamespace = CASAPahampang.Client
-build_property.ProjectDir = E:\CASA-Pahampang-Project\CASAPahampang.Client\
+build_property.ProjectDir = /home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = false
 build_property.RazorLangVersion = 9.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = E:\CASA-Pahampang-Project\CASAPahampang.Client
+build_property.MSBuildProjectDirectory = /home/alterego/Desktop/CASAPahampang/CASAPahampang.Client
 build_property._RazorSourceGeneratorDebug = 
 build_property.EffectiveAnalysisLevelStyle = 10.0
 build_property.EnableCodeStyleSeverity = 
 
-[E:/CASA-Pahampang-Project/CASAPahampang.Client/Layout/AuthInitializer.razor]
-build_metadata.AdditionalFiles.TargetPath = TGF5b3V0XEF1dGhJbml0aWFsaXplci5yYXpvcg==
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Layout/AuthInitializer.razor]
+build_metadata.AdditionalFiles.TargetPath = TGF5b3V0L0F1dGhJbml0aWFsaXplci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[E:/CASA-Pahampang-Project/CASAPahampang.Client/Pages/Counter.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ291bnRlci5yYXpvcg==
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/Counter.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQ291bnRlci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[E:/CASA-Pahampang-Project/CASAPahampang.Client/Pages/Login.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTG9naW4ucmF6b3I=
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/Login.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTG9naW4ucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[E:/CASA-Pahampang-Project/CASAPahampang.Client/_Imports.razor]
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/_Imports.razor]
 build_metadata.AdditionalFiles.TargetPath = X0ltcG9ydHMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
+
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/Dashboard.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvRGFzaGJvYXJkLnJhem9y
+build_metadata.AdditionalFiles.CssScope = b-6rleey8sp8
+
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/LiveScoreboard.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTGl2ZVNjb3JlYm9hcmQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-ns4367438a
+
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/Scorekeeper.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvU2NvcmVrZWVwZXIucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-cbg1tlwp80
+
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/VolleyballScoreboard.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvVm9sbGV5YmFsbFNjb3JlYm9hcmQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-8i72rxyrvw
+
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/VolleyballScorekeeper.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvVm9sbGV5YmFsbFNjb3Jla2VlcGVyLnJhem9y
+build_metadata.AdditionalFiles.CssScope = b-bn0xy2j9p7

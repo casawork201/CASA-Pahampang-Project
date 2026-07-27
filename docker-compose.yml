@@ -2,7 +2,7 @@ services:
   ts-casawasm-app:
     image: tailscale/tailscale:latest
     container_name: ts-casawasm-bff
-    hostname: joep-casa-pahampang-webapp
+    hostname: casa-pahampang-webapp
     environment:
       - TS_AUTHKEY=tskey-auth-k1F8fvs35W11CNTRL-YBmi6vJsZydSRopGYc43zd9wku6cHczZS
       - TS_STATE_DIR=/var/lib/tailscale
@@ -10,7 +10,7 @@ services:
     command: >
       sh -c "tailscaled & 
              sleep 5; 
-             tailscale up --authkey=$$TS_AUTHKEY --hostname=joep-casa-pahampang-webapp;             
+             tailscale up --authkey=$$TS_AUTHKEY --hostname=casa-pahampang-webapp;             
              tailscale funnel --bg 8080; 
              wait"
     volumes:
@@ -37,8 +37,7 @@ services:
       - AuthApiBaseUrl=https://casa-authgateway-service.taila207b7.ts.net
       - Jwt__Key=THIS_IS_A_32_CHAR_MINIMUM_SECRET_KEY!!
       - Jwt__Issuer=https://casa-authgateway-service.taila207b7.ts.net
-      - Jwt__Audience=https://casa-authgateway-service.taila207b7.ts.net
-      - BackendUrl=https://pr-casa-webapp.taila207b7.ts.net
+      - Jwt__Audience=https://casa-authgateway-service.taila207b7.ts.net      
 
     volumes:
       - ./pr-keys:/app/App_Data/DataProtection-Keys

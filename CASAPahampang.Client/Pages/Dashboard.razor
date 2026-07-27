@@ -1,0 +1,311 @@
+﻿@page "/dashboard"
+
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+@rendermode InteractiveWebAssembly
+@inject NavigationManager Navigation
+
+<div class="dashboard-container">
+    <header class="dashboard-header">
+        <div class="header-left">
+            <button class="btn-back" @onclick="GoBack" type="button">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                Back
+            </button>
+            <div class="header-title">
+                <p class="branding-subtitle">CENTRAL AZUCARERA DE SAN ANTONIO</p>
+                <h1>CASA PAHAMPANG ⚡</h1>
+            </div>
+        </div>
+        <div class="live-badge">
+            <span class="pulse-dot"></span> LIVE TOURNAMENT
+        </div>
+    </header>
+
+    <div class="row">
+        <div class="col-md-6">
+            <section class="sport-section">
+                <div class="section-header">
+                    <h2>🏀 Basketball</h2>
+                    <span class="game-count">6 Teams • 3 Matches</span>
+                </div>
+
+                <div class="matches-list">
+                    @foreach (var match in BasketballMatches)
+                    {
+                        <div class="match-row">
+                            <div class="match-info">
+                                <span class="game-num">GAME @match.GameNumber</span>
+                                <span class="venue">@match.Venue</span>
+                            </div>
+
+                            <div class="match-versus">
+                                <div class="team-cell team-left">
+                                    <div class="team-text">
+                                        <span class="team-name">@match.Team1.Name</span>
+                                        <span class="team-record">@match.Team1.Record</span>
+                                    </div>
+                                    <img src="@match.Team1.LogoUrl" alt="@match.Team1.Name Logo" class="team-logo" />
+                                </div>
+
+                                <div class="score-cell">
+                                    @if (match.IsLive)
+                                    {
+                                        <div class="live-score">
+                                            <span>@match.Team1.Score</span>
+                                            <span class="score-dash">-</span>
+                                            <span>@match.Team2.Score</span>
+                                        </div>
+                                        <span class="status-badge status-live">@match.StatusText</span>
+                                    }
+                                    else
+                                    {
+                                        <div class="time-display">@match.StatusText</div>
+                                        <span class="status-badge status-final">@match.PeriodDetails</span>
+                                    }
+                                </div>
+
+                                <div class="team-cell team-right">
+                                    <img src="@match.Team2.LogoUrl" alt="@match.Team2.Name Logo" class="team-logo" />
+                                    <div class="team-text">
+                                        <span class="team-name">@match.Team2.Name</span>
+                                        <span class="team-record">@match.Team2.Record</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="match-extra">
+                                <span>@match.PeriodDetails</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </section>
+
+            <section class="sport-section">
+                <div class="section-header">
+                    <h2>🏐 Volleyball</h2>
+                    <span class="game-count">6 Teams • 3 Matches</span>
+                </div>
+
+                <div class="matches-list">
+                    @foreach (var match in VolleyballMatches)
+                    {
+                        <div class="match-row">
+                            <div class="match-info">
+                                <span class="game-num">GAME @match.GameNumber</span>
+                                <span class="venue">@match.Venue</span>
+                            </div>
+
+                            <div class="match-versus">
+                                <div class="team-cell team-left">
+                                    <div class="team-text">
+                                        <span class="team-name">@match.Team1.Name</span>
+                                        <span class="team-record">@match.Team1.Record</span>
+                                    </div>
+                                    <img src="@match.Team1.LogoUrl" alt="@match.Team1.Name Logo" class="team-logo" />
+                                </div>
+
+                                <div class="score-cell">
+                                    @if (match.IsLive)
+                                    {
+                                        <div class="live-score">
+                                            <span>@match.Team1.Score</span>
+                                            <span class="score-dash">-</span>
+                                            <span>@match.Team2.Score</span>
+                                        </div>
+                                        <span class="status-badge status-live">@match.StatusText</span>
+                                    }
+                                    else
+                                    {
+                                        <div class="time-display">@match.StatusText</div>
+                                        <span class="status-badge status-final">@match.PeriodDetails</span>
+                                    }
+                                </div>
+
+                                <div class="team-cell team-right">
+                                    <img src="@match.Team2.LogoUrl" alt="@match.Team2.Name Logo" class="team-logo" />
+                                    <div class="team-text">
+                                        <span class="team-name">@match.Team2.Name</span>
+                                        <span class="team-record">@match.Team2.Record</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="match-extra">
+                                <span>@match.PeriodDetails</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </section>
+        </div>
+
+        <div class="col-md-6">
+            <section class="chat-section">
+                <div class="section-header">
+                    <h2>💬 Live Fan Chat</h2>
+                    <span class="game-count">124 Fans Online</span>
+                </div>
+
+                <div class="chatbox-card">
+                    <div class="chatbox-messages">
+                        @foreach (var msg in ChatMessages)
+                        {
+                            <div class="chat-message @(msg.IsUser ? "my-message" : "other-message")">
+                                <img src="@msg.AvatarUrl" alt="Avatar" class="chat-avatar" />
+                                <div class="msg-bubble">
+                                    <div class="msg-header">
+                                        <span class="msg-user">@msg.User</span>
+                                        <span class="msg-time">@msg.Timestamp.ToString("hh:mm tt")</span>
+                                    </div>
+                                    <div class="msg-text">@msg.Message</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="chatbox-footer">
+                        <input type="text" class="chat-input" placeholder="Join the discussion..." 
+                               @bind="NewMessageText" @bind:event="oninput" @onkeyup="HandleKeyUp" />
+                        <button class="btn-send" @onclick="SendMessage" type="button">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    public class Team
+    {
+        public string Name { get; set; } = string.Empty;
+        public string LogoUrl { get; set; } = string.Empty;
+        public string Record { get; set; } = "0-0";
+        public int Score { get; set; }
+    }
+
+    public class Match
+    {
+        public int GameNumber { get; set; }
+        public string Venue { get; set; } = "Main Gym";
+        public Team Team1 { get; set; } = new();
+        public Team Team2 { get; set; } = new();
+        public bool IsLive { get; set; }
+        public string StatusText { get; set; } = string.Empty;
+        public string PeriodDetails { get; set; } = string.Empty;
+    }
+
+    public class ChatMessage
+    {
+        public string User { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public DateTime Timestamp { get; set; } = DateTime.Now;
+        public bool IsUser { get; set; }
+        public string AvatarUrl { get; set; } = string.Empty;
+    }
+
+    private string NewMessageText = string.Empty;
+
+    private List<ChatMessage> ChatMessages = new()
+    {
+        new ChatMessage { User = "Mark", Message = "Tigers are looking strong in Q4! 🐅", Timestamp = DateTime.Now.AddMinutes(-12), IsUser = false, AvatarUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Mark" },
+        new ChatMessage { User = "Sarah", Message = "Spikers take set 3! What a comeback! 🏐", Timestamp = DateTime.Now.AddMinutes(-5), IsUser = false, AvatarUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Sarah" },
+        new ChatMessage { User = "You", Message = "Let's go Tigers! 🔥", Timestamp = DateTime.Now.AddMinutes(-2), IsUser = true, AvatarUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=You" }
+    };
+
+    private List<Match> BasketballMatches = new()
+    {
+        new Match {
+            GameNumber = 1,
+            Venue = "Main Gym",
+            IsLive = false,
+            StatusText = "8:00 PM PHT",
+            PeriodDetails = "Neutral Site",
+            Team1 = new Team { Name = "Rockets", Record = "0-0", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Rockets", Score = 0 },
+            Team2 = new Team { Name = "Mavericks", Record = "0-0", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Mavericks", Score = 0 }
+        },
+        new Match {
+            GameNumber = 2,
+            Venue = "Court B",
+            IsLive = true,
+            StatusText = "Q4 02:45",
+            PeriodDetails = "4th Quarter",
+            Team1 = new Team { Name = "Tigers", Record = "2-1", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Tigers", Score = 88 },
+            Team2 = new Team { Name = "Eagles", Record = "1-2", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Eagles", Score = 82 }
+        },
+        new Match {
+            GameNumber = 3,
+            Venue = "Main Gym",
+            IsLive = false,
+            StatusText = "FINAL",
+            PeriodDetails = "Full Time",
+            Team1 = new Team { Name = "Panthers", Record = "3-0", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Panthers", Score = 95 },
+            Team2 = new Team { Name = "Blaze", Record = "0-3", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Blaze", Score = 91 }
+        }
+    };
+
+    private List<Match> VolleyballMatches = new()
+    {
+        new Match {
+            GameNumber = 1,
+            Venue = "Volleyball Court A",
+            IsLive = true,
+            StatusText = "SET 3",
+            PeriodDetails = "Set 3 (21-19)",
+            Team1 = new Team { Name = "Spikers", Record = "1-0", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Spikers", Score = 2 },
+            Team2 = new Team { Name = "Blockers", Record = "0-1", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Blockers", Score = 1 }
+        },
+        new Match {
+            GameNumber = 2,
+            Venue = "Volleyball Court B",
+            IsLive = false,
+            StatusText = "6:30 PM PHT",
+            PeriodDetails = "Upcoming",
+            Team1 = new Team { Name = "Falcons", Record = "0-0", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Falcons", Score = 0 },
+            Team2 = new Team { Name = "Knights", Record = "0-0", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Knights", Score = 0 }
+        },
+        new Match {
+            GameNumber = 3,
+            Venue = "Main Gym",
+            IsLive = false,
+            StatusText = "FINAL",
+            PeriodDetails = "3 - 0 Sets",
+            Team1 = new Team { Name = "Setters", Record = "2-0", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Setters", Score = 3 },
+            Team2 = new Team { Name = "Servers", Record = "0-2", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Servers", Score = 0 }
+        }
+    };
+
+    private void SendMessage()
+    {
+        if (!string.IsNullOrWhiteSpace(NewMessageText))
+        {
+            ChatMessages.Add(new ChatMessage
+            {
+                User = "You",
+                Message = NewMessageText,
+                Timestamp = DateTime.Now,
+                IsUser = true,
+                AvatarUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=You"
+            });
+            NewMessageText = string.Empty;
+        }
+    }
+
+    private void HandleKeyUp(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            SendMessage();
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/");
+    }
+}
