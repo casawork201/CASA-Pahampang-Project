@@ -44,6 +44,14 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = X0ltcG9ydHMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/Bingo-Display.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQmluZ28tRGlzcGxheS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = b-65vy7213ee
+
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/BingoGame.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQmluZ29HYW1lLnJhem9y
+build_metadata.AdditionalFiles.CssScope = b-qbz4bgkfdo
+
 [/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/Dashboard.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvRGFzaGJvYXJkLnJhem9y
 build_metadata.AdditionalFiles.CssScope = b-6rleey8sp8

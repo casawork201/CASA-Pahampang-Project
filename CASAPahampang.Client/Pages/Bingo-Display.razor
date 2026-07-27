@@ -1,0 +1,376 @@
+﻿@page "/bingo-display"
+
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+@implements IAsyncDisposable
+@rendermode InteractiveWebAssembly
+@inject IJSRuntime JS
+
+<div class="public-display-container">
+    <header class="display-header">
+        <div class="brand-title">
+            <h2>CENTRAL AZUCARERA DE SAN ANTONIO</h2>
+            <h1>ELECTRONIC BINGO LIVE 🎲</h1>
+        </div>
+
+        <div class="pattern-badge-box">
+            <span class="badge-label">TARGET PATTERN</span>
+            <div class="badge-title">@ActivePatternName</div>
+        </div>
+
+        <div class="stats-badge-box">
+            <div class="stat-item">
+                <span class="stat-label">CALLED</span>
+                <span class="stat-val">@DrawnNumbers.Count / 75</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="display-main-grid">
+        
+        <div class="left-hero-panel">
+            
+            <div class="giant-ball-card">
+                <span class="panel-label">CURRENT BALL</span>
+                @if (CurrentNumber.HasValue)
+                {
+                    <div class="giant-ball @GetLetterClass(CurrentNumber.Value)" key="@CurrentNumber.Value">
+                        <div class="giant-letter">@GetBingoLetter(CurrentNumber.Value)</div>
+                        <div class="giant-number">@CurrentNumber.Value</div>
+                    </div>
+                }
+                else
+                {
+                    <div class="giant-ball-placeholder">
+                        <span>WAITING FOR CALLER...</span>
+                    </div>
+                }
+            </div>
+
+            <div class="pattern-preview-card">
+                <span class="panel-label">WINNING PATTERN</span>
+                <div class="pattern-grid">
+                    @for (int r = 0; r < 5; r++)
+                    {
+                        for (int c = 0; c < 5; c++)
+                        {
+                            int row = r;
+                            int col = c;
+                            bool isFree = (row == 2 && col == 2 && ActivePatternIncludeFree);
+                            bool isTarget = ActivePatternMatrix[row, col];
+                            <div class="p-cell @(isFree ? "free" : "") @(isTarget ? "active" : "")">
+                                @(isFree ? "★" : "")
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="recent-history-card">
+                <span class="panel-label">LAST 5 CALLS</span>
+                <div class="recent-pills">
+                    @if (DrawHistory.Count == 0)
+                    {
+                        <span class="empty-txt">Game ready to start</span>
+                    }
+                    else
+                    {
+                        @foreach (var num in DrawHistory.Take(5))
+                        {
+                            <div class="history-pill @GetLetterClass(num)">
+                                <strong>@GetBingoLetter(num)</strong>-@num
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+        </div>
+
+        <div class="right-board-panel">
+            <div class="display-bingo-board">
+                <div class="board-col">
+                    <div class="col-hdr col-b">B</div>
+                    <div class="col-cells">
+                        @for (int i = 1; i <= 15; i++)
+                        {
+                            int val = i;
+                            <div class="display-cell @(DrawnNumbers.Contains(val) ? "drawn" : "")">@val</div>
+                        }
+                    </div>
+                </div>
+
+                <div class="board-col">
+                    <div class="col-hdr col-i">I</div>
+                    <div class="col-cells">
+                        @for (int i = 16; i <= 30; i++)
+                        {
+                            int val = i;
+                            <div class="display-cell @(DrawnNumbers.Contains(val) ? "drawn" : "")">@val</div>
+                        }
+                    </div>
+                </div>
+
+                <div class="board-col">
+                    <div class="col-hdr col-n">N</div>
+                    <div class="col-cells">
+                        @for (int i = 31; i <= 45; i++)
+                        {
+                            int val = i;
+                            <div class="display-cell @(DrawnNumbers.Contains(val) ? "drawn" : "")">@val</div>
+                        }
+                    </div>
+                </div>
+
+                <div class="board-col">
+                    <div class="col-hdr col-g">G</div>
+                    <div class="col-cells">
+                        @for (int i = 46; i <= 60; i++)
+                        {
+                            int val = i;
+                            <div class="display-cell @(DrawnNumbers.Contains(val) ? "drawn" : "")">@val</div>
+                        }
+                    </div>
+                </div>
+
+                <div class="board-col">
+                    <div class="col-hdr col-o">O</div>
+                    <div class="col-cells">
+                        @for (int i = 61; i <= 75; i++)
+                        {
+                            int val = i;
+                            <div class="display-cell @(DrawnNumbers.Contains(val) ? "drawn" : "")">@val</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    .public-display-container {
+        min-height: 100vh;
+        background-color: #0f172a;
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        padding: 1.5rem;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .display-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #1e293b;
+        padding: 1rem 2rem;
+        border-radius: 16px;
+        border: 1px solid #334155;
+        margin-bottom: 1.5rem;
+    }
+
+    .brand-title h2 { margin: 0; font-size: 0.85rem; font-weight: 800; color: #38bdf8; letter-spacing: 1px; }
+    .brand-title h1 { margin: 0; font-size: 1.8rem; font-weight: 900; color: #ffffff; }
+
+    .pattern-badge-box {
+        background: #0284c7; padding: 0.5rem 1.5rem; border-radius: 12px; text-align: center;
+    }
+    .badge-label { font-size: 0.65rem; font-weight: 800; color: #e0f2fe; display: block; }
+    .badge-title { font-size: 1.2rem; font-weight: 900; color: #ffffff; }
+
+    .stats-badge-box { display: flex; gap: 1rem; }
+    .stat-item { background: #334155; padding: 0.5rem 1rem; border-radius: 10px; text-align: center; }
+    .stat-label { font-size: 0.65rem; color: #94a3b8; font-weight: 800; display: block; }
+    .stat-val { font-size: 1.1rem; font-weight: 900; color: #facc15; }
+
+    .display-main-grid {
+        display: grid;
+        grid-template-columns: 380px 1fr;
+        gap: 1.5rem;
+        flex: 1;
+    }
+
+    .left-hero-panel { display: flex; flex-direction: column; gap: 1.25rem; }
+
+    .panel-label { font-size: 0.75rem; font-weight: 800; color: #94a3b8; letter-spacing: 1px; margin-bottom: 0.5rem; display: block; }
+
+    .giant-ball-card {
+        background: #1e293b; border: 1px solid #334155; border-radius: 20px;
+        padding: 1.5rem; text-align: center;
+    }
+
+    .giant-ball {
+        width: 180px; height: 180px; margin: 0 auto; border-radius: 50%;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        color: #ffffff; box-shadow: inset 0 -8px 16px rgba(0,0,0,0.4), 0 12px 24px rgba(0,0,0,0.3);
+        animation: zoomIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @@keyframes zoomIn {
+        0% { transform: scale(0.3); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    .giant-letter { font-size: 2.2rem; font-weight: 900; line-height: 1; }
+    .giant-number { font-size: 5rem; font-weight: 900; line-height: 1; }
+
+    .giant-ball-placeholder {
+        width: 180px; height: 180px; margin: 0 auto; border-radius: 50%;
+        background: #0f172a; border: 3px dashed #334155; display: flex;
+        align-items: center; justify-content: center; color: #64748b; font-weight: 800; font-size: 0.85rem;
+    }
+
+    .pattern-preview-card {
+        background: #1e293b; border: 1px solid #334155; border-radius: 16px;
+        padding: 1.25rem; text-align: center;
+    }
+
+    .pattern-grid {
+        display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;
+        width: 160px; height: 160px; margin: 0 auto; background: #0f172a;
+        padding: 6px; border-radius: 10px; border: 1px solid #334155;
+    }
+
+    .p-cell {
+        background: #1e293b; border-radius: 4px; display: flex; align-items: center;
+        justify-content: center; font-size: 0.7rem; color: #475569;
+    }
+    .p-cell.active { background: #38bdf8; color: #0f172a; }
+    .p-cell.free { background: #facc15; color: #0f172a; font-weight: 900; }
+
+    .recent-history-card {
+        background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 1rem;
+    }
+    .recent-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .empty-txt { font-size: 0.85rem; color: #64748b; }
+
+    .history-pill {
+        padding: 0.4rem 0.8rem; border-radius: 20px; color: #ffffff;
+        font-weight: 900; font-size: 0.9rem;
+    }
+
+    .bg-b { background: #ef4444; }
+    .bg-i { background: #f59e0b; }
+    .bg-n { background: #10b981; }
+    .bg-g { background: #0284c7; }
+    .bg-o { background: #8b5cf6; }
+
+    .right-board-panel {
+        background: #1e293b; border: 1px solid #334155; border-radius: 20px;
+        padding: 1.5rem; display: flex; flex-direction: column;
+    }
+
+    .display-bingo-board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; flex: 1; }
+    .board-col { display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .col-hdr {
+        text-align: center; font-size: 2.2rem; font-weight: 900; color: #ffffff;
+        padding: 0.4rem; border-radius: 10px;
+    }
+
+    .col-b { background: #ef4444; }
+    .col-i { background: #f59e0b; }
+    .col-n { background: #10b981; }
+    .col-g { background: #0284c7; }
+    .col-o { background: #8b5cf6; }
+
+    .col-cells { display: flex; flex-direction: column; gap: 0.4rem; flex: 1; }
+
+    .display-cell {
+        background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+        flex: 1; display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem; font-weight: 900; color: #475569; transition: all 0.25 ease;
+    }
+
+    .display-cell.drawn {
+        background: #facc15; color: #0f172a; border-color: #facc15;
+        box-shadow: 0 0 12px rgba(250, 204, 21, 0.5); transform: scale(1.03);
+    }
+</style>
+
+@code {
+    private HashSet<int> DrawnNumbers = new();
+    private List<int> DrawHistory = new();
+    private int? CurrentNumber;
+
+    private string ActivePatternName = "Straight Line";
+    private bool[,] ActivePatternMatrix = new bool[5, 5];
+    private bool ActivePatternIncludeFree = true;
+
+    private DotNetObjectReference<Bingo_Display>? objRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            objRef = DotNetObjectReference.Create(this);
+            // Listen to live broadcast sync messages from Caller screen
+            await JS.InvokeVoidAsync("bingoSync.listen", objRef);
+        }
+    }
+
+    [JSInvokable]
+    public void UpdateGameState(string jsonState)
+    {
+        try
+        {
+            var state = System.Text.Json.JsonSerializer.Deserialize<BingoStateDto>(jsonState);
+            if (state != null)
+            {
+                DrawnNumbers = new HashSet<int>(state.DrawnNumbers);
+                DrawHistory = state.DrawHistory;
+                CurrentNumber = state.CurrentNumber;
+                ActivePatternName = state.PatternName;
+                ActivePatternIncludeFree = state.IncludeFree;
+
+                if (state.PatternMatrixFlat != null && state.PatternMatrixFlat.Length == 25)
+                {
+                    for (int r = 0; r < 5; r++)
+                        for (int c = 0; c < 5; c++)
+                            ActivePatternMatrix[r, c] = state.PatternMatrixFlat[r * 5 + c];
+                }
+
+                StateHasChanged();
+            }
+        }
+        catch
+        {
+            // Json parse error fallback
+        }
+    }
+
+    private string GetBingoLetter(int number) => number switch
+    {
+        <= 15 => "B",
+        <= 30 => "I",
+        <= 45 => "N",
+        <= 60 => "G",
+        _ => "O"
+    };
+
+    private string GetLetterClass(int number) => number switch
+    {
+        <= 15 => "bg-b",
+        <= 30 => "bg-i",
+        <= 45 => "bg-n",
+        <= 60 => "bg-g",
+        _ => "bg-o"
+    };
+
+    public async ValueTask DisposeAsync()
+    {
+        objRef?.Dispose();
+    }
+
+    public class BingoStateDto
+    {
+        public List<int> DrawnNumbers { get; set; } = new();
+        public List<int> DrawHistory { get; set; } = new();
+        public int? CurrentNumber { get; set; }
+        public string PatternName { get; set; } = string.Empty;
+        public bool IncludeFree { get; set; }
+        public bool[] PatternMatrixFlat { get; set; } = new bool[25];
+    }
+}

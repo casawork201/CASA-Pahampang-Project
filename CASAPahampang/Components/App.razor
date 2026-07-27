@@ -17,6 +17,81 @@
 <body>
     <Routes />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
+    <script>
+        window.bingoAudio = {
+            selectedVoiceIndex: -1,
+
+            // Fetch only English-language browser voices
+            getVoices: function () {
+                if (!('speechSynthesis' in window)) return [];
+                let voices = window.speechSynthesis.getVoices();
+                
+                // Filter strictly for voices starting with 'en' (English)
+                return voices
+                    .map((v, i) => ({ index: i, name: v.name, lang: v.lang }))
+                    .filter(v => v.lang.toLowerCase().startsWith('en'))
+                    .map(v => ({
+                        index: v.index,
+                        name: `${v.name} (${v.lang})`
+                    }));
+            },
+
+            // Set active voice by its system index
+            setVoice: function (index) {
+                this.selectedVoiceIndex = parseInt(index);
+            },
+
+            // Announce letter and number clearly
+            announce: function (text) {
+                if (!('speechSynthesis' in window)) return;
+
+                // Clear queued audio to prevent overlapping speech threads
+                window.speechSynthesis.cancel();
+
+                setTimeout(() => {
+                    let utterance = new SpeechSynthesisUtterance(text);
+                    utterance.rate = 0.9;   // Pacing for maximum caller clarity 📢
+                    utterance.pitch = 1.0;
+                    utterance.volume = 1.0;
+
+                    let voices = window.speechSynthesis.getVoices();
+                    if (voices.length > 0) {
+                        // Find chosen voice or default to the first available English voice
+                        let chosenVoice = voices[this.selectedVoiceIndex];
+                        if (!chosenVoice || !chosenVoice.lang.toLowerCase().startsWith('en')) {
+                            chosenVoice = voices.find(v => v.lang.toLowerCase().startsWith('en')) || voices[0];
+                        }
+                        utterance.voice = chosenVoice;
+                    }
+
+                    window.speechSynthesis.speak(utterance);
+                }, 50);
+            },
+
+            stop: function () {
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                }
+            }
+        };
+    </script>
+    <script>
+        window.bingoSync = {
+            channel: new BroadcastChannel('bingo_game_sync'),
+
+            // Called by Caller page to broadcast updates
+            broadcast: function (stateJson) {
+                this.channel.postMessage(stateJson);
+            },
+
+            // Called by Display page to listen for updates
+            listen: function (dotnetRef) {
+                this.channel.onmessage = (event) => {
+                    dotnetRef.invokeMethodAsync('UpdateGameState', event.data);
+                };
+            }
+        };
+    </script>
 </body>
 
 </html>

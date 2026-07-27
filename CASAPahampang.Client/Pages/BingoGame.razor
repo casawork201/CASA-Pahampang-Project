@@ -1,0 +1,744 @@
+﻿@page "/bingo"
+
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+@using System.Timers
+@implements IDisposable
+@rendermode InteractiveWebAssembly
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<div class="bingo-container">
+    <header class="dashboard-header">
+        <div class="header-left">
+            <button class="btn-back" @onclick="GoBack" type="button">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                Dashboard
+            </button>
+            <div class="header-title">
+                <p class="branding-subtitle">CENTRAL AZUCARERA DE SAN ANTONIO</p>
+                <h1>ELECTRONIC BINGO CALLER 🎲✨</h1>
+            </div>
+        </div>
+
+        <div class="header-center">
+            <button class="btn-pattern-modal" @onclick="OpenPatternModal">
+                🎯 PATTERN: <strong>@ActivePatternName</strong>
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+            </button>
+        </div>
+
+        <div class="header-stats">
+            <div class="header-stats">
+                @if (AvailableVoices.Count > 0)
+                {
+                    <select class="voice-select" @onchange="OnVoiceChanged" disabled="@IsMuted">
+                        @foreach (var voice in AvailableVoices)
+                        {
+                            <option value="@voice.Index">🗣️ @voice.Name</option>
+                        }
+                    </select>
+                }
+
+                <button class="btn-sound @(IsMuted ? "muted" : "")" @onclick="ToggleSound" title="Toggle Sound Announcements">
+                    @(IsMuted ? "🔇 SOUND OFF" : "🔊 SOUND ON")
+                </button>
+            </div>
+            @* <button class="btn-sound @(IsMuted ? "muted" : "")" @onclick="ToggleSound" title="Toggle Sound Announcements">
+                @(IsMuted ? "🔇 SOUND OFF" : "🔊 SOUND ON")
+            </button> *@
+
+            <div class="stat-badge">
+                CALLED: <strong>@DrawnNumbers.Count / 75</strong>
+            </div>
+            <div class="stat-badge remaining">
+                REMAINING: <strong>@(75 - DrawnNumbers.Count)</strong>
+            </div>
+        </div>
+    </header>
+
+    <div class="bingo-grid-layout">
+        
+        <div class="caller-panel">
+            
+            <div class="pattern-preview-card">
+                <div class="card-header-flex">
+                    <span class="card-label">CURRENT TARGET PATTERN</span>
+                    <button class="btn-link" @onclick="OpenPatternModal">Customize Pattern ✏️</button>
+                </div>
+                <div class="mini-pattern-grid">
+                    @for (int r = 0; r < 5; r++)
+                    {
+                        for (int c = 0; c < 5; c++)
+                        {
+                            int row = r;
+                            int col = c;
+                            bool isFree = (row == 2 && col == 2 && ActivePatternIncludeFree);
+                            bool isTarget = ActivePatternMatrix[row, col];
+                            <div class="mini-cell @(isFree ? "free" : "") @(isTarget ? "active" : "")">
+                                @(isFree ? "★" : "")
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="current-ball-card">
+                <span class="card-label">CURRENT BALL</span>
+                @if (CurrentNumber.HasValue)
+                {
+                    <div class="ball-display @GetLetterClass(CurrentNumber.Value)">
+                        <div class="ball-letter">@GetBingoLetter(CurrentNumber.Value)</div>
+                        <div class="ball-number">@CurrentNumber.Value</div>
+                    </div>
+                }
+                else
+                {
+                    <div class="ball-placeholder">
+                        <span>READY</span>
+                    </div>
+                }
+            </div>
+
+            <div class="controls-card">
+                <button class="btn-draw-main" @onclick="DrawNextBall" disabled="@(DrawnNumbers.Count >= 75 || AutoDrawActive)">
+                    🎲 DRAW NEXT BALL
+                </button>
+
+                <div class="auto-draw-row">
+                    <button class="btn-auto @(AutoDrawActive ? "active" : "")" @onclick="ToggleAutoDraw" disabled="@(DrawnNumbers.Count >= 75)">
+                        @(AutoDrawActive ? "⏸️ PAUSE AUTO" : "▶️ AUTO DRAW")
+                    </button>
+                    <select class="speed-select" @bind="AutoDrawInterval" disabled="@AutoDrawActive">
+                        <option value="3000">3 Secs</option>
+                        <option value="5000">5 Secs</option>
+                        <option value="8000">8 Secs</option>
+                    </select>
+                </div>
+
+                <button class="btn-reset" @onclick="ResetGame">
+                    🔄 RESET GAME
+                </button>
+            </div>
+
+            <div class="history-card">
+                <h3>RECENT CALLS</h3>
+                <div class="history-balls">
+                    @if (DrawHistory.Count == 0)
+                    {
+                        <span class="empty-msg">No balls drawn yet.</span>
+                    }
+                    else
+                    {
+                        @foreach (var num in DrawHistory.Take(5))
+                        {
+                            <div class="history-pill @GetLetterClass(num)">
+                                <strong>@GetBingoLetter(num)</strong>-@num
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="verifier-card">
+                <h3>🏆 BINGO WINNER CHECK</h3>
+                <p class="verifier-hint">Enter card numbers separated by space or comma:</p>
+                <div class="verifier-input-group">
+                    <input type="text" @bind="VerificationInput" placeholder="e.g. 5, 23, 38, 52, 61" />
+                    <button class="btn-verify" @onclick="VerifyBingo">CHECK</button>
+                </div>
+                @if (!string.IsNullOrEmpty(VerificationMessage))
+                {
+                    <div class="verifier-result @(IsVerificationValid ? "valid" : "invalid")">
+                        @VerificationMessage
+                    </div>
+                }
+            </div>
+
+        </div>
+
+        <div class="board-panel">
+            <div class="bingo-board">
+                <div class="bingo-column">
+                    <div class="column-header col-b">B</div>
+                    <div class="column-cells">
+                        @for (int i = 1; i <= 15; i++)
+                        {
+                            int val = i;
+                            <div class="bingo-cell @(DrawnNumbers.Contains(val) ? "drawn" : "")">
+                                @val
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="bingo-column">
+                    <div class="column-header col-i">I</div>
+                    <div class="column-cells">
+                        @for (int i = 16; i <= 30; i++)
+                        {
+                            int val = i;
+                            <div class="bingo-cell @(DrawnNumbers.Contains(val) ? "drawn" : "")">
+                                @val
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="bingo-column">
+                    <div class="column-header col-n">N</div>
+                    <div class="column-cells">
+                        @for (int i = 31; i <= 45; i++)
+                        {
+                            int val = i;
+                            <div class="bingo-cell @(DrawnNumbers.Contains(val) ? "drawn" : "")">
+                                @val
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="bingo-column">
+                    <div class="column-header col-g">G</div>
+                    <div class="column-cells">
+                        @for (int i = 46; i <= 60; i++)
+                        {
+                            int val = i;
+                            <div class="bingo-cell @(DrawnNumbers.Contains(val) ? "drawn" : "")">
+                                @val
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="bingo-column">
+                    <div class="column-header col-o">O</div>
+                    <div class="column-cells">
+                        @for (int i = 61; i <= 75; i++)
+                        {
+                            int val = i;
+                            <div class="bingo-cell @(DrawnNumbers.Contains(val) ? "drawn" : "")">
+                                @val
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@if (IsPatternModalOpen)
+{
+    <div class="modal-backdrop" @onclick="ClosePatternModal">
+        <div class="modal-card" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2>🛠️ Custom Pattern Studio</h2>
+                <button class="btn-close" @onclick="ClosePatternModal">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                
+                <div class="preset-section">
+                    <h3>Quick Presets</h3>
+                    <div class="preset-buttons-grid">
+                        <button class="btn-preset" @onclick='() => ApplyPreset("Straight Line")'>📏 Line</button>
+                        <button class="btn-preset" @onclick='() => ApplyPreset("Four Corners")'>🔲 4 Corners</button>
+                        <button class="btn-preset" @onclick='() => ApplyPreset("Letter X")'>✖️ Letter X</button>
+                        <button class="btn-preset" @onclick='() => ApplyPreset("Letter T")'>🔝 Letter T</button>
+                        <button class="btn-preset" @onclick='() => ApplyPreset("Outer Box")'>⬛ Outer Box</button>
+                        <button class="btn-preset" @onclick='() => ApplyPreset("Postage Stamp")'>✉️ Stamp</button>
+                        <button class="btn-preset" @onclick='() => ApplyPreset("Blackout")'>🌕 Blackout</button>
+                    </div>
+                </div>
+
+                <hr class="divider" />
+
+                <div class="designer-section">
+                    <h3>Pattern Customizer</h3>
+                    
+                    <div class="custom-name-row">
+                        <label>Pattern Name:</label>
+                        <input type="text" class="pattern-name-input" @bind="TempPatternName" placeholder="e.g. Pyramid, Diamond, Letter H..." />
+                    </div>
+
+                    <div class="grid-tools-row">
+                        <button type="button" class="btn-tool" @onclick="ClearGrid">🧹 Clear</button>
+                        <button type="button" class="btn-tool" @onclick="FillGrid">🎨 Fill All</button>
+                        <button type="button" class="btn-tool" @onclick="InvertGrid">🔄 Invert</button>
+                        <label class="free-space-toggle">
+                            <input type="checkbox" @bind="TempIncludeFree" /> Free Spot Active
+                        </label>
+                    </div>
+
+                    <div class="interactive-grid">
+                        <div class="grid-col-labels">
+                            <span>B</span><span>I</span><span>N</span><span>G</span><span>O</span>
+                        </div>
+                        <div class="grid-matrix">
+                            @for (int r = 0; r < 5; r++)
+                            {
+                                for (int c = 0; c < 5; c++)
+                                {
+                                    int row = r;
+                                    int col = c;
+                                    bool isCenter = (row == 2 && col == 2);
+                                    bool isSelected = TempPatternMatrix[row, col];
+
+                                    <button type="button" 
+                                            class="grid-cell @(isCenter && TempIncludeFree ? "cell-free" : "") @(isSelected ? "cell-selected" : "")" 
+                                            @onclick="() => TogglePatternCell(row, col)">
+                                        @(isCenter && TempIncludeFree ? "★" : (isSelected ? "✓" : ""))
+                                    </button>
+                                }
+                            }
+                        </div>
+                    </div>
+                    <div class="spots-count">Required Spots: <strong>@GetActiveSpotsCount()</strong></div>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-cancel" @onclick="ClosePatternModal">Cancel</button>
+                <button class="btn-save" @onclick="SavePatternSelection">Apply Custom Pattern</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private HashSet<int> DrawnNumbers = new();
+    private List<int> DrawHistory = new();
+    private int? CurrentNumber;
+
+    private bool AutoDrawActive = false;
+    private int AutoDrawInterval = 5000;
+    private Timer? AutoTimer;
+
+    private bool IsMuted = false;
+
+    private string VerificationInput = string.Empty;
+    private string VerificationMessage = string.Empty;
+    private bool IsVerificationValid = false;
+
+    private Random RandomGenerator = new();
+
+    // Active Target Pattern State
+    private string ActivePatternName = "Straight Line";
+    private bool[,] ActivePatternMatrix = new bool[5, 5];
+    private bool ActivePatternIncludeFree = true;
+
+    // Temporary Modal State
+    private bool IsPatternModalOpen = false;
+    private string TempPatternName = "Custom Pattern";
+    private bool[,] TempPatternMatrix = new bool[5, 5];
+    private bool TempIncludeFree = true;
+
+    protected override void OnInitialized()
+    {
+        ApplyPreset("Straight Line");
+        SavePatternSelection();
+    }
+    @* private async Task DrawNextBall()
+    {
+        if (DrawnNumbers.Count >= 75)
+        {
+            StopAutoDraw();
+            return;
+        }
+
+        // Pre-initialize audio context on button click
+        await JS.InvokeVoidAsync("bingoAudio.init");
+
+        int number;
+        do
+        {
+            number = RandomGenerator.Next(1, 76);
+        } while (DrawnNumbers.Contains(number));
+
+        DrawnNumbers.Add(number);
+        CurrentNumber = number;
+        DrawHistory.Insert(0, number);
+
+        // Trigger voice announcement
+        await AnnounceBallAsync(number);
+
+        StateHasChanged();
+    }
+
+    private async Task AnnounceBallAsync(int number)
+    {
+        if (IsMuted) return;
+
+        string letter = GetBingoLetter(number);
+        string speechText = $"{letter}, {number}";
+
+        try
+        {
+            // Call the external JavaScript helper instead of eval
+            await JS.InvokeVoidAsync("bingoAudio.announce", speechText);
+        }
+        catch
+        {
+            // Fallback silently if JS interop fails
+        }
+    } *@
+    public class VoiceModel
+    {
+        public int Index { get; set; }
+        public string Name { get; set; } = string.Empty;
+    }
+
+    private List<VoiceModel> AvailableVoices = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Load available system voices after initial render
+            await LoadSystemVoices();
+        }
+    }
+
+    private async Task LoadSystemVoices()
+    {
+        try
+        {
+            var voices = await JS.InvokeAsync<List<VoiceModel>>("bingoAudio.getVoices");
+            if (voices != null && voices.Count > 0)
+            {
+                AvailableVoices = voices;
+                
+                // Automatically set the first English voice as default
+                int defaultVoiceIndex = voices[0].Index;
+                await JS.InvokeVoidAsync("bingoAudio.setVoice", defaultVoiceIndex);
+                
+                StateHasChanged();
+            }
+        }
+        catch
+        {
+            // Fallback gracefully if JS interop isn't ready
+        }
+    }
+
+    private async Task OnVoiceChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int selectedIndex))
+        {
+            await JS.InvokeVoidAsync("bingoAudio.setVoice", selectedIndex);
+        }
+    }
+
+    private async Task DrawNextBall()
+    {
+        if (DrawnNumbers.Count >= 75)
+        {
+            StopAutoDraw();
+            return;
+        }
+
+        // Refresh voices list if it was empty on initial render
+        if (AvailableVoices.Count == 0)
+        {
+            await LoadSystemVoices();
+        }
+
+        int number;
+        do
+        {
+            number = RandomGenerator.Next(1, 76);
+        } while (DrawnNumbers.Contains(number));
+
+        DrawnNumbers.Add(number);
+        CurrentNumber = number;
+        DrawHistory.Insert(0, number);
+
+        // Announce without double-triggering init
+        await AnnounceBallAsync(number);
+
+        StateHasChanged();
+    }
+
+    private async Task AnnounceBallAsync(int number)
+    {
+        if (IsMuted) return;
+
+        string letter = GetBingoLetter(number);
+        string speechText = $"{letter}, {number}";
+
+        try
+        {
+            await JS.InvokeVoidAsync("bingoAudio.announce", speechText);
+        }
+        catch
+        {
+            // Ignored
+        }
+    }
+    private async Task ToggleSound()
+    {
+        IsMuted = !IsMuted;
+        if (IsMuted)
+        {
+            await JS.InvokeVoidAsync("bingoAudio.stop");
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("bingoAudio.init");
+        }
+    }
+
+    private async Task ResetGame()
+    {
+        StopAutoDraw();
+        await JS.InvokeVoidAsync("bingoAudio.stop");
+        DrawnNumbers.Clear();
+        DrawHistory.Clear();
+        CurrentNumber = null;
+        VerificationInput = string.Empty;
+        VerificationMessage = string.Empty;
+    }
+    
+    private void ToggleAutoDraw()
+    {
+        if (AutoDrawActive)
+        {
+            StopAutoDraw();
+        }
+        else
+        {
+            AutoDrawActive = true;
+            AutoTimer = new Timer(AutoDrawInterval);
+            AutoTimer.Elapsed += (s, e) =>
+            {
+                InvokeAsync(async () =>
+                {
+                    if (DrawnNumbers.Count < 75)
+                    {
+                        await DrawNextBall();
+                    }
+                    else
+                    {
+                        StopAutoDraw();
+                    }
+                });
+            };
+            AutoTimer.Start();
+        }
+    }
+
+    private void StopAutoDraw()
+    {
+        AutoDrawActive = false;
+        AutoTimer?.Stop();
+        AutoTimer?.Dispose();
+        AutoTimer = null;
+        StateHasChanged();
+    }
+
+   
+
+    private string GetBingoLetter(int number) => number switch
+    {
+        <= 15 => "B",
+        <= 30 => "I",
+        <= 45 => "N",
+        <= 60 => "G",
+        _ => "O"
+    };
+
+    private string GetLetterClass(int number) => number switch
+    {
+        <= 15 => "bg-b",
+        <= 30 => "bg-i",
+        <= 45 => "bg-n",
+        <= 60 => "bg-g",
+        _ => "bg-o"
+    };
+
+    /* Pattern Studio Logic */
+    private void OpenPatternModal()
+    {
+        TempPatternName = ActivePatternName;
+        TempIncludeFree = ActivePatternIncludeFree;
+        Array.Copy(ActivePatternMatrix, TempPatternMatrix, ActivePatternMatrix.Length);
+        IsPatternModalOpen = true;
+    }
+
+    private void ClosePatternModal()
+    {
+        IsPatternModalOpen = false;
+    }
+
+    private void TogglePatternCell(int row, int col)
+    {
+        if (row == 2 && col == 2 && TempIncludeFree) return;
+        TempPatternMatrix[row, col] = !TempPatternMatrix[row, col];
+    }
+
+    private void ClearGrid()
+    {
+        TempPatternMatrix = new bool[5, 5];
+        if (TempIncludeFree) TempPatternMatrix[2, 2] = true;
+    }
+
+    private void FillGrid()
+    {
+        for (int r = 0; r < 5; r++)
+            for (int c = 0; c < 5; c++)
+                TempPatternMatrix[r, c] = true;
+    }
+
+    private void InvertGrid()
+    {
+        for (int r = 0; r < 5; r++)
+            for (int c = 0; c < 5; c++)
+                if (!(r == 2 && c == 2 && TempIncludeFree))
+                    TempPatternMatrix[r, c] = !TempPatternMatrix[r, c];
+    }
+
+    private int GetActiveSpotsCount()
+    {
+        int count = 0;
+        for (int r = 0; r < 5; r++)
+            for (int c = 0; c < 5; c++)
+                if (TempPatternMatrix[r, c]) count++;
+        return count;
+    }
+
+    private void ApplyPreset(string presetName)
+    {
+        TempPatternName = presetName;
+        TempIncludeFree = true;
+        TempPatternMatrix = new bool[5, 5];
+        TempPatternMatrix[2, 2] = true;
+
+        switch (presetName)
+        {
+            case "Straight Line":
+                for (int c = 0; c < 5; c++) TempPatternMatrix[2, c] = true;
+                break;
+
+            case "Four Corners":
+                TempPatternMatrix[0, 0] = true;
+                TempPatternMatrix[0, 4] = true;
+                TempPatternMatrix[4, 0] = true;
+                TempPatternMatrix[4, 4] = true;
+                break;
+
+            case "Letter X":
+                for (int i = 0; i < 5; i++)
+                {
+                    TempPatternMatrix[i, i] = true;
+                    TempPatternMatrix[i, 4 - i] = true;
+                }
+                break;
+
+            case "Letter T":
+                for (int c = 0; c < 5; c++) TempPatternMatrix[0, c] = true;
+                for (int r = 0; r < 5; r++) TempPatternMatrix[r, 2] = true;
+                break;
+
+            case "Outer Box":
+                for (int i = 0; i < 5; i++)
+                {
+                    TempPatternMatrix[0, i] = true;
+                    TempPatternMatrix[4, i] = true;
+                    TempPatternMatrix[i, 0] = true;
+                    TempPatternMatrix[i, 4] = true;
+                }
+                break;
+
+            case "Postage Stamp":
+                TempPatternMatrix[0, 3] = true;
+                TempPatternMatrix[0, 4] = true;
+                TempPatternMatrix[1, 3] = true;
+                TempPatternMatrix[1, 4] = true;
+                break;
+
+            case "Blackout":
+                FillGrid();
+                break;
+        }
+    }
+
+    private void SavePatternSelection()
+    {
+        ActivePatternName = string.IsNullOrWhiteSpace(TempPatternName) ? "Custom Pattern" : TempPatternName;
+        ActivePatternIncludeFree = TempIncludeFree;
+        if (ActivePatternIncludeFree) TempPatternMatrix[2, 2] = true;
+        
+        Array.Copy(TempPatternMatrix, ActivePatternMatrix, TempPatternMatrix.Length);
+        IsPatternModalOpen = false;
+    }
+
+    private void VerifyBingo()
+    {
+        if (string.IsNullOrWhiteSpace(VerificationInput))
+        {
+            VerificationMessage = "Please enter card numbers to check.";
+            IsVerificationValid = false;
+            return;
+        }
+
+        var tokens = VerificationInput.Split(new[] { ' ', ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+        var uncalledNumbers = new List<int>();
+
+        foreach (var token in tokens)
+        {
+            if (int.TryParse(token, out int val))
+            {
+                if (!DrawnNumbers.Contains(val))
+                {
+                    uncalledNumbers.Add(val);
+                }
+            }
+        }
+
+        if (uncalledNumbers.Count == 0)
+        {
+            IsVerificationValid = true;
+            VerificationMessage = "✅ VALID BINGO! All entered numbers have been called.";
+        }
+        else
+        {
+            IsVerificationValid = false;
+            VerificationMessage = $"❌ INVALID! Numbers not called yet: {string.Join(", ", uncalledNumbers)}";
+        }
+    }
+
+    private void GoBack()
+    {
+        StopAutoDraw();
+        _ = JS.InvokeVoidAsync("eval", "if ('speechSynthesis' in window) window.speechSynthesis.cancel();");
+        Navigation.NavigateTo("/dashboard");
+    }
+
+    public void Dispose()
+    {
+        StopAutoDraw();
+    }
+    private async Task BroadcastStateAsync()
+    {
+        // Flatten 2D pattern array into 1D for clean JSON serialization
+        bool[] flatPattern = new bool[25];
+        for (int r = 0; r < 5; r++)
+            for (int c = 0; c < 5; c++)
+                flatPattern[r * 5 + c] = ActivePatternMatrix[r, c];
+
+        var state = new
+        {
+            DrawnNumbers = DrawnNumbers.ToList(),
+            DrawHistory = DrawHistory,
+            CurrentNumber = CurrentNumber,
+            PatternName = ActivePatternName,
+            IncludeFree = ActivePatternIncludeFree,
+            PatternMatrixFlat = flatPattern
+        };
+
+        string json = System.Text.Json.JsonSerializer.Serialize(state);
+        await JS.InvokeVoidAsync("bingoSync.broadcast", json);
+    }
+}
