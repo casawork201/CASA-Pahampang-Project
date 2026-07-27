@@ -1,8 +1,10 @@
 using CASAPahampang.Client.Pages;
 using CASAPahampang.Components;
+using CASAPahampang.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddSignalR();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
@@ -33,5 +35,5 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(CASAPahampang.Client._Imports).Assembly);
-
+app.MapHub<BingoHub>("/bingohub");
 app.Run();

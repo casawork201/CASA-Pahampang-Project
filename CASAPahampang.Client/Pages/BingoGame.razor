@@ -1,8 +1,8 @@
 ﻿@page "/bingo"
-
+@using Microsoft.AspNetCore.SignalR.Client
 @using static Microsoft.AspNetCore.Components.Web.RenderMode
 @using System.Timers
-@implements IDisposable
+@implements IAsyncDisposable
 @rendermode InteractiveWebAssembly
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
@@ -28,24 +28,19 @@
         </div>
 
         <div class="header-stats">
-            <div class="header-stats">
-                @if (AvailableVoices.Count > 0)
-                {
-                    <select class="voice-select" @onchange="OnVoiceChanged" disabled="@IsMuted">
-                        @foreach (var voice in AvailableVoices)
-                        {
-                            <option value="@voice.Index">🗣️ @voice.Name</option>
-                        }
-                    </select>
-                }
+            @if (AvailableVoices.Count > 0)
+            {
+                <select class="voice-select" @onchange="OnVoiceChanged" disabled="@IsMuted">
+                    @foreach (var voice in AvailableVoices)
+                    {
+                        <option value="@voice.Index">🗣️ @voice.Name</option>
+                    }
+                </select>
+            }
 
-                <button class="btn-sound @(IsMuted ? "muted" : "")" @onclick="ToggleSound" title="Toggle Sound Announcements">
-                    @(IsMuted ? "🔇 SOUND OFF" : "🔊 SOUND ON")
-                </button>
-            </div>
-            @* <button class="btn-sound @(IsMuted ? "muted" : "")" @onclick="ToggleSound" title="Toggle Sound Announcements">
+            <button class="btn-sound @(IsMuted ? "muted" : "")" @onclick="ToggleSound" title="Toggle Sound Announcements">
                 @(IsMuted ? "🔇 SOUND OFF" : "🔊 SOUND ON")
-            </button> *@
+            </button>
 
             <div class="stat-badge">
                 CALLED: <strong>@DrawnNumbers.Count / 75</strong>
@@ -335,55 +330,8 @@
     private bool[,] TempPatternMatrix = new bool[5, 5];
     private bool TempIncludeFree = true;
 
-    protected override void OnInitialized()
-    {
-        ApplyPreset("Straight Line");
-        SavePatternSelection();
-    }
-    @* private async Task DrawNextBall()
-    {
-        if (DrawnNumbers.Count >= 75)
-        {
-            StopAutoDraw();
-            return;
-        }
+    private HubConnection? hubConnection;
 
-        // Pre-initialize audio context on button click
-        await JS.InvokeVoidAsync("bingoAudio.init");
-
-        int number;
-        do
-        {
-            number = RandomGenerator.Next(1, 76);
-        } while (DrawnNumbers.Contains(number));
-
-        DrawnNumbers.Add(number);
-        CurrentNumber = number;
-        DrawHistory.Insert(0, number);
-
-        // Trigger voice announcement
-        await AnnounceBallAsync(number);
-
-        StateHasChanged();
-    }
-
-    private async Task AnnounceBallAsync(int number)
-    {
-        if (IsMuted) return;
-
-        string letter = GetBingoLetter(number);
-        string speechText = $"{letter}, {number}";
-
-        try
-        {
-            // Call the external JavaScript helper instead of eval
-            await JS.InvokeVoidAsync("bingoAudio.announce", speechText);
-        }
-        catch
-        {
-            // Fallback silently if JS interop fails
-        }
-    } *@
     public class VoiceModel
     {
         public int Index { get; set; }
@@ -392,11 +340,47 @@
 
     private List<VoiceModel> AvailableVoices = new();
 
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/bingohub"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        await hubConnection.StartAsync();
+
+        // Send initial state to display screens immediately on connect
+        await BroadcastStateAsync();
+    }
+
+    private async Task BroadcastStateAsync()
+    {
+        if (hubConnection is not null && hubConnection.State == HubConnectionState.Connected)
+        {
+            bool[] flatPattern = new bool[25];
+            for (int r = 0; r < 5; r++)
+                for (int c = 0; c < 5; c++)
+                    flatPattern[r * 5 + c] = ActivePatternMatrix[r, c];
+
+            var state = new
+            {
+                DrawnNumbers = DrawnNumbers.ToList(),
+                DrawHistory = DrawHistory,
+                CurrentNumber = CurrentNumber,
+                PatternName = ActivePatternName,
+                IncludeFree = ActivePatternIncludeFree,
+                PatternMatrixFlat = flatPattern
+            };
+
+            string json = System.Text.Json.JsonSerializer.Serialize(state);
+            await hubConnection.SendAsync("SendGameState", json);
+        }
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            // Load available system voices after initial render
             await LoadSystemVoices();
         }
     }
@@ -409,11 +393,8 @@
             if (voices != null && voices.Count > 0)
             {
                 AvailableVoices = voices;
-                
-                // Automatically set the first English voice as default
                 int defaultVoiceIndex = voices[0].Index;
                 await JS.InvokeVoidAsync("bingoAudio.setVoice", defaultVoiceIndex);
-                
                 StateHasChanged();
             }
         }
@@ -439,7 +420,6 @@
             return;
         }
 
-        // Refresh voices list if it was empty on initial render
         if (AvailableVoices.Count == 0)
         {
             await LoadSystemVoices();
@@ -455,8 +435,8 @@
         CurrentNumber = number;
         DrawHistory.Insert(0, number);
 
-        // Announce without double-triggering init
         await AnnounceBallAsync(number);
+        await BroadcastStateAsync();
 
         StateHasChanged();
     }
@@ -477,6 +457,7 @@
             // Ignored
         }
     }
+
     private async Task ToggleSound()
     {
         IsMuted = !IsMuted;
@@ -499,8 +480,10 @@
         CurrentNumber = null;
         VerificationInput = string.Empty;
         VerificationMessage = string.Empty;
+
+        await BroadcastStateAsync();
     }
-    
+
     private void ToggleAutoDraw()
     {
         if (AutoDrawActive)
@@ -537,8 +520,6 @@
         AutoTimer = null;
         StateHasChanged();
     }
-
-   
 
     private string GetBingoLetter(int number) => number switch
     {
@@ -664,7 +645,7 @@
         }
     }
 
-    private void SavePatternSelection()
+    private async Task SavePatternSelection()
     {
         ActivePatternName = string.IsNullOrWhiteSpace(TempPatternName) ? "Custom Pattern" : TempPatternName;
         ActivePatternIncludeFree = TempIncludeFree;
@@ -672,6 +653,8 @@
         
         Array.Copy(TempPatternMatrix, ActivePatternMatrix, TempPatternMatrix.Length);
         IsPatternModalOpen = false;
+
+        await BroadcastStateAsync();
     }
 
     private void VerifyBingo()
@@ -716,29 +699,13 @@
         Navigation.NavigateTo("/dashboard");
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         StopAutoDraw();
-    }
-    private async Task BroadcastStateAsync()
-    {
-        // Flatten 2D pattern array into 1D for clean JSON serialization
-        bool[] flatPattern = new bool[25];
-        for (int r = 0; r < 5; r++)
-            for (int c = 0; c < 5; c++)
-                flatPattern[r * 5 + c] = ActivePatternMatrix[r, c];
 
-        var state = new
+        if (hubConnection is not null)
         {
-            DrawnNumbers = DrawnNumbers.ToList(),
-            DrawHistory = DrawHistory,
-            CurrentNumber = CurrentNumber,
-            PatternName = ActivePatternName,
-            IncludeFree = ActivePatternIncludeFree,
-            PatternMatrixFlat = flatPattern
-        };
-
-        string json = System.Text.Json.JsonSerializer.Serialize(state);
-        await JS.InvokeVoidAsync("bingoSync.broadcast", json);
+            await hubConnection.DisposeAsync();
+        }
     }
 }

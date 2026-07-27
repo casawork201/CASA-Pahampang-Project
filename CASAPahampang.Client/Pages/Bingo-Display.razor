@@ -1,15 +1,21 @@
 ﻿@page "/bingo-display"
 
+@using Microsoft.AspNetCore.SignalR.Client
 @using static Microsoft.AspNetCore.Components.Web.RenderMode
 @implements IAsyncDisposable
 @rendermode InteractiveWebAssembly
-@inject IJSRuntime JS
+@inject NavigationManager Navigation
 
-<div class="public-display-container">
+<div class="public-display-light">
     <header class="display-header">
         <div class="brand-title">
             <h2>CENTRAL AZUCARERA DE SAN ANTONIO</h2>
             <h1>ELECTRONIC BINGO LIVE 🎲</h1>
+        </div>
+
+        <div class="header-status-box">
+            <span class="status-indicator @(IsConnected ? "online" : "offline")"></span>
+            <span class="status-text">@(IsConnected ? "LIVE SYNCED" : "CONNECTING...")</span>
         </div>
 
         <div class="pattern-badge-box">
@@ -41,7 +47,7 @@
                 else
                 {
                     <div class="giant-ball-placeholder">
-                        <span>WAITING FOR CALLER...</span>
+                        <span>READY TO START</span>
                     </div>
                 }
             </div>
@@ -70,7 +76,7 @@
                 <div class="recent-pills">
                     @if (DrawHistory.Count == 0)
                     {
-                        <span class="empty-txt">Game ready to start</span>
+                        <span class="empty-txt">Waiting for first draw...</span>
                     }
                     else
                     {
@@ -149,12 +155,12 @@
 </div>
 
 <style>
-    .public-display-container {
+    .public-display-light {
         min-height: 100vh;
-        background-color: #0f172a;
-        color: #ffffff;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        padding: 1.5rem;
+        background-color: #f1f5f9;
+        color: #0f172a;
+        font-family: system-ui, -apple-system, sans-serif;
+        padding: 1.25rem;
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
@@ -164,15 +170,25 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background: #1e293b;
-        padding: 1rem 2rem;
+        background: #ffffff;
+        padding: 1rem 1.75rem;
         border-radius: 16px;
-        border: 1px solid #334155;
-        margin-bottom: 1.5rem;
+        border: 1px solid #cbd5e1;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        margin-bottom: 1.25rem;
     }
 
-    .brand-title h2 { margin: 0; font-size: 0.85rem; font-weight: 800; color: #38bdf8; letter-spacing: 1px; }
-    .brand-title h1 { margin: 0; font-size: 1.8rem; font-weight: 900; color: #ffffff; }
+    .brand-title h2 { margin: 0; font-size: 0.85rem; font-weight: 800; color: #0284c7; letter-spacing: 1px; }
+    .brand-title h1 { margin: 0; font-size: 1.75rem; font-weight: 900; color: #0f172a; }
+
+    .header-status-box {
+        display: flex; align-items: center; gap: 0.5rem; background: #f8fafc;
+        border: 1px solid #e2e8f0; padding: 0.4rem 0.8rem; border-radius: 20px;
+    }
+    .status-indicator { width: 10px; height: 10px; border-radius: 50%; }
+    .status-indicator.online { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+    .status-indicator.offline { background: #ef4444; }
+    .status-text { font-size: 0.75rem; font-weight: 800; color: #475569; }
 
     .pattern-badge-box {
         background: #0284c7; padding: 0.5rem 1.5rem; border-radius: 12px; text-align: center;
@@ -181,116 +197,119 @@
     .badge-title { font-size: 1.2rem; font-weight: 900; color: #ffffff; }
 
     .stats-badge-box { display: flex; gap: 1rem; }
-    .stat-item { background: #334155; padding: 0.5rem 1rem; border-radius: 10px; text-align: center; }
-    .stat-label { font-size: 0.65rem; color: #94a3b8; font-weight: 800; display: block; }
-    .stat-val { font-size: 1.1rem; font-weight: 900; color: #facc15; }
+    .stat-item { background: #f8fafc; border: 1px solid #e2e8f0; padding: 0.5rem 1rem; border-radius: 10px; text-align: center; }
+    .stat-label { font-size: 0.65rem; color: #64748b; font-weight: 800; display: block; }
+    .stat-val { font-size: 1.1rem; font-weight: 900; color: #0284c7; }
 
     .display-main-grid {
         display: grid;
-        grid-template-columns: 380px 1fr;
-        gap: 1.5rem;
+        grid-template-columns: 360px 1fr;
+        gap: 1.25rem;
         flex: 1;
     }
 
-    .left-hero-panel { display: flex; flex-direction: column; gap: 1.25rem; }
+    .left-hero-panel { display: flex; flex-direction: column; gap: 1rem; }
 
-    .panel-label { font-size: 0.75rem; font-weight: 800; color: #94a3b8; letter-spacing: 1px; margin-bottom: 0.5rem; display: block; }
+    .panel-label { font-size: 0.75rem; font-weight: 800; color: #64748b; letter-spacing: 1px; margin-bottom: 0.4rem; display: block; }
 
     .giant-ball-card {
-        background: #1e293b; border: 1px solid #334155; border-radius: 20px;
-        padding: 1.5rem; text-align: center;
+        background: #ffffff; border: 1px solid #cbd5e1; border-radius: 16px;
+        padding: 1.25rem; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
     }
 
     .giant-ball {
-        width: 180px; height: 180px; margin: 0 auto; border-radius: 50%;
+        width: 170px; height: 170px; margin: 0 auto; border-radius: 50%;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        color: #ffffff; box-shadow: inset 0 -8px 16px rgba(0,0,0,0.4), 0 12px 24px rgba(0,0,0,0.3);
-        animation: zoomIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        color: #ffffff; box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
-    @@keyframes zoomIn {
-        0% { transform: scale(0.3); opacity: 0; }
+    @@keyframes popIn {
+        0% { transform: scale(0.4); opacity: 0; }
         100% { transform: scale(1); opacity: 1; }
     }
 
     .giant-letter { font-size: 2.2rem; font-weight: 900; line-height: 1; }
-    .giant-number { font-size: 5rem; font-weight: 900; line-height: 1; }
+    .giant-number { font-size: 4.8rem; font-weight: 900; line-height: 1; }
 
     .giant-ball-placeholder {
-        width: 180px; height: 180px; margin: 0 auto; border-radius: 50%;
-        background: #0f172a; border: 3px dashed #334155; display: flex;
-        align-items: center; justify-content: center; color: #64748b; font-weight: 800; font-size: 0.85rem;
+        width: 170px; height: 170px; margin: 0 auto; border-radius: 50%;
+        background: #f8fafc; border: 3px dashed #cbd5e1; display: flex;
+        align-items: center; justify-content: center; color: #94a3b8; font-weight: 800; font-size: 0.85rem;
     }
 
     .pattern-preview-card {
-        background: #1e293b; border: 1px solid #334155; border-radius: 16px;
-        padding: 1.25rem; text-align: center;
+        background: #ffffff; border: 1px solid #cbd5e1; border-radius: 16px;
+        padding: 1rem; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
     }
 
     .pattern-grid {
         display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;
-        width: 160px; height: 160px; margin: 0 auto; background: #0f172a;
-        padding: 6px; border-radius: 10px; border: 1px solid #334155;
+        width: 150px; height: 150px; margin: 0 auto; background: #f1f5f9;
+        padding: 6px; border-radius: 10px; border: 1px solid #cbd5e1;
     }
 
     .p-cell {
-        background: #1e293b; border-radius: 4px; display: flex; align-items: center;
-        justify-content: center; font-size: 0.7rem; color: #475569;
+        background: #ffffff; border-radius: 4px; display: flex; align-items: center;
+        justify-content: center; font-size: 0.7rem; color: #cbd5e1; border: 1px solid #e2e8f0;
     }
-    .p-cell.active { background: #38bdf8; color: #0f172a; }
-    .p-cell.free { background: #facc15; color: #0f172a; font-weight: 900; }
+    .p-cell.active { background: #0284c7; border-color: #0284c7; color: #ffffff; }
+    .p-cell.free { background: #f59e0b; border-color: #f59e0b; color: #ffffff; font-weight: 900; }
 
     .recent-history-card {
-        background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 1rem;
+        background: #ffffff; border: 1px solid #cbd5e1; border-radius: 16px; padding: 1rem;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
     }
-    .recent-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    .empty-txt { font-size: 0.85rem; color: #64748b; }
+    .recent-pills { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .empty-txt { font-size: 0.85rem; color: #94a3b8; }
 
     .history-pill {
-        padding: 0.4rem 0.8rem; border-radius: 20px; color: #ffffff;
-        font-weight: 900; font-size: 0.9rem;
+        padding: 0.35rem 0.75rem; border-radius: 20px; color: #ffffff;
+        font-weight: 900; font-size: 0.85rem;
     }
 
-    .bg-b { background: #ef4444; }
-    .bg-i { background: #f59e0b; }
-    .bg-n { background: #10b981; }
+    .bg-b { background: #dc2626; }
+    .bg-i { background: #d97706; }
+    .bg-n { background: #16a34a; }
     .bg-g { background: #0284c7; }
-    .bg-o { background: #8b5cf6; }
+    .bg-o { background: #7c3aed; }
 
     .right-board-panel {
-        background: #1e293b; border: 1px solid #334155; border-radius: 20px;
-        padding: 1.5rem; display: flex; flex-direction: column;
+        background: #ffffff; border: 1px solid #cbd5e1; border-radius: 16px;
+        padding: 1.25rem; display: flex; flex-direction: column;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
     }
 
-    .display-bingo-board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; flex: 1; }
-    .board-col { display: flex; flex-direction: column; gap: 0.5rem; }
+    .display-bingo-board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.85rem; flex: 1; }
+    .board-col { display: flex; flex-direction: column; gap: 0.4rem; }
 
     .col-hdr {
-        text-align: center; font-size: 2.2rem; font-weight: 900; color: #ffffff;
-        padding: 0.4rem; border-radius: 10px;
+        text-align: center; font-size: 2rem; font-weight: 900; color: #ffffff;
+        padding: 0.35rem; border-radius: 8px;
     }
 
-    .col-b { background: #ef4444; }
-    .col-i { background: #f59e0b; }
-    .col-n { background: #10b981; }
+    .col-b { background: #dc2626; }
+    .col-i { background: #d97706; }
+    .col-n { background: #16a34a; }
     .col-g { background: #0284c7; }
-    .col-o { background: #8b5cf6; }
+    .col-o { background: #7c3aed; }
 
-    .col-cells { display: flex; flex-direction: column; gap: 0.4rem; flex: 1; }
+    .col-cells { display: flex; flex-direction: column; gap: 0.35rem; flex: 1; }
 
     .display-cell {
-        background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+        background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;
         flex: 1; display: flex; align-items: center; justify-content: center;
-        font-size: 1.4rem; font-weight: 900; color: #475569; transition: all 0.25 ease;
+        font-size: 1.35rem; font-weight: 800; color: #64748b; transition: all 0.2s ease;
     }
 
     .display-cell.drawn {
-        background: #facc15; color: #0f172a; border-color: #facc15;
-        box-shadow: 0 0 12px rgba(250, 204, 21, 0.5); transform: scale(1.03);
+        background: #facc15; color: #0f172a; border-color: #eab308;
+        font-weight: 900; box-shadow: 0 2px 8px rgba(250, 204, 21, 0.6); transform: scale(1.02);
     }
 </style>
 
 @code {
+    private HubConnection? hubConnection;
     private HashSet<int> DrawnNumbers = new();
     private List<int> DrawHistory = new();
     private int? CurrentNumber;
@@ -299,20 +318,24 @@
     private bool[,] ActivePatternMatrix = new bool[5, 5];
     private bool ActivePatternIncludeFree = true;
 
-    private DotNetObjectReference<Bingo_Display>? objRef;
+    private bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnInitializedAsync()
     {
-        if (firstRender)
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/bingohub"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        hubConnection.On<string>("ReceiveGameState", (jsonState) =>
         {
-            objRef = DotNetObjectReference.Create(this);
-            // Listen to live broadcast sync messages from Caller screen
-            await JS.InvokeVoidAsync("bingoSync.listen", objRef);
-        }
+            UpdateGameState(jsonState);
+        });
+
+        await hubConnection.StartAsync();
     }
 
-    [JSInvokable]
-    public void UpdateGameState(string jsonState)
+    private void UpdateGameState(string jsonState)
     {
         try
         {
@@ -332,7 +355,7 @@
                             ActivePatternMatrix[r, c] = state.PatternMatrixFlat[r * 5 + c];
                 }
 
-                StateHasChanged();
+                InvokeAsync(StateHasChanged);
             }
         }
         catch
@@ -361,7 +384,10 @@
 
     public async ValueTask DisposeAsync()
     {
-        objRef?.Dispose();
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
     }
 
     public class BingoStateDto
