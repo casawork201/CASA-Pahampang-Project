@@ -37,4 +37,5 @@ app.MapRazorComponents<App>()
     .AddAdditionalAssemblies(typeof(CASAPahampang.Client._Imports).Assembly);
 app.MapHub<BingoHub>("/bingohub");
 app.MapHub<VolleyballHub>("/volleyballhub");
+app.MapHub<BasketballHub>("/basketballhub");
 app.Run();

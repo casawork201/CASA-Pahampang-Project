@@ -1,8 +1,10 @@
 ﻿@page "/scorekeeper"
 
+@using Microsoft.AspNetCore.SignalR.Client
 @using static Microsoft.AspNetCore.Components.Web.RenderMode
 @using System.Timers
-@implements IDisposable
+@using System.Text.Json
+@implements IAsyncDisposable
 @rendermode InteractiveWebAssembly
 @inject NavigationManager Navigation
 
@@ -28,6 +30,12 @@
             <div class="team-header">
                 <img src="@Team1LogoUrl" alt="Team 1 Logo" class="team-logo-lg" />
                 <h2>@Team1Name</h2>
+            </div>
+
+            <div class="possession-toggle">
+                <button class="btn-poss @(Team1Possession ? "active" : "")" @onclick="() => TogglePossession(1)">
+                    ◄ POSSESSION
+                </button>
             </div>
             
             <div class="big-score-display">
@@ -102,6 +110,12 @@
                 <h2>@Team2Name</h2>
             </div>
 
+            <div class="possession-toggle">
+                <button class="btn-poss @(Team2Possession ? "active" : "")" @onclick="() => TogglePossession(2)">
+                    POSSESSION ►
+                </button>
+            </div>
+
             <div class="big-score-display">
                 @Team2Score
             </div>
@@ -158,7 +172,6 @@
     </div>
 </div>
 
-
 @code {
     public class ActionLog
     {
@@ -167,18 +180,22 @@
         public string Message { get; set; } = string.Empty;
     }
 
+    private HubConnection? hubConnection;
+
     // Teams State
     private string Team1Name = "Tigers";
     private string Team1LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Tigers";
     private int Team1Score = 88;
     private int Team1Fouls = 3;
     private int Team1Timeouts = 2;
+    private bool Team1Possession = true;
 
     private string Team2Name = "Eagles";
     private string Team2LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Eagles";
     private int Team2Score = 82;
     private int Team2Fouls = 2;
     private int Team2Timeouts = 1;
+    private bool Team2Possession = false;
 
     // Period State
     private int Period = 4;
@@ -200,19 +217,63 @@
     private Timer? MasterTimer;
     private List<ActionLog> ActionLogs = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // Setup 1-second master tick
+        // Setup Master Clock
         MasterTimer = new Timer(1000);
         MasterTimer.Elapsed += OnTimerTick;
         MasterTimer.AutoReset = true;
+
+        // SignalR Connection
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/basketballhub"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        hubConnection.On("RequestBasketballStateFromHost", async () =>
+        {
+            await BroadcastGameStateAsync();
+        });
+
+        await hubConnection.StartAsync();
+        await BroadcastGameStateAsync();
     }
 
-    private void OnTimerTick(object? sender, ElapsedEventArgs e)
+    private async Task BroadcastGameStateAsync()
+    {
+        if (hubConnection is not null && hubConnection.State == HubConnectionState.Connected)
+        {
+            var state = new
+            {
+                Team1Name,
+                Team1LogoUrl,
+                Team1Score,
+                Team1Fouls,
+                Team1Timeouts,
+                Team1Possession,
+                Team2Name,
+                Team2LogoUrl,
+                Team2Score,
+                Team2Fouls,
+                Team2Timeouts,
+                Team2Possession,
+                Period,
+                PeriodText,
+                GameClockSeconds,
+                ShotClockSeconds,
+                IsLive = IsGameClockRunning,
+                RecentEvents = ActionLogs.Select(l => new { GameClock = l.GameClockTime, l.Message }).Take(5).ToList()
+            };
+
+            string json = JsonSerializer.Serialize(state);
+            await hubConnection.SendAsync("SendBasketballState", json);
+        }
+    }
+
+    private async void OnTimerTick(object? sender, ElapsedEventArgs e)
     {
         bool stateChanged = false;
 
-        // Process Game Clock
         if (IsGameClockRunning && GameClockSeconds > 0)
         {
             GameClockSeconds--;
@@ -226,7 +287,6 @@
             }
         }
 
-        // Process Shot Clock
         if (IsShotClockRunning && ShotClockSeconds > 0)
         {
             ShotClockSeconds--;
@@ -241,48 +301,61 @@
 
         if (stateChanged)
         {
-            InvokeAsync(StateHasChanged);
+            await InvokeAsync(StateHasChanged);
+            await BroadcastGameStateAsync();
         }
     }
 
-    // Score Modifications
-    private void ChangeScore(int team, int delta)
+    private async Task ChangeScore(int team, int delta)
     {
         if (team == 1)
         {
             Team1Score = Math.Max(0, Team1Score + delta);
-            LogEvent($"{Team1Name} {(delta > 0 ? $"+{delta}" : $"{delta}")} PTS (Total: {Team1Score})");
+            LogEvent($"{Team1Name} {(delta > 0 ? $"+{delta}" : $"{delta}")} PTS (Total: {Team1Score}) 🏀");
         }
         else
         {
             Team2Score = Math.Max(0, Team2Score + delta);
-            LogEvent($"{Team2Name} {(delta > 0 ? $"+{delta}" : $"{delta}")} PTS (Total: {Team2Score})");
+            LogEvent($"{Team2Name} {(delta > 0 ? $"+{delta}" : $"{delta}")} PTS (Total: {Team2Score}) 🏀");
         }
 
-        // Auto reset shot clock to 24s on field goal/free throw points
         if (delta > 0)
         {
-            ResetShotClock(24);
+            await ResetShotClock(24, suppressBroadcast: true);
         }
+
+        await BroadcastGameStateAsync();
     }
 
-    private void ChangeFouls(int team, int delta)
+    private async Task TogglePossession(int team)
+    {
+        Team1Possession = (team == 1);
+        Team2Possession = (team == 2);
+        LogEvent($"Possession arrow switched to {(team == 1 ? Team1Name : Team2Name)} 🏀");
+
+        await BroadcastGameStateAsync();
+    }
+
+    private async Task ChangeFouls(int team, int delta)
     {
         if (team == 1) Team1Fouls = Math.Max(0, Team1Fouls + delta);
         else Team2Fouls = Math.Max(0, Team2Fouls + delta);
+
+        await BroadcastGameStateAsync();
     }
 
-    private void ChangeTimeouts(int team, int delta)
+    private async Task ChangeTimeouts(int team, int delta)
     {
         if (team == 1) Team1Timeouts = Math.Max(0, Team1Timeouts + delta);
         else Team2Timeouts = Math.Max(0, Team2Timeouts + delta);
+
+        await BroadcastGameStateAsync();
     }
 
-    // Clock Control Methods
-    private void ToggleGameClock()
+    private async Task ToggleGameClock()
     {
         IsGameClockRunning = !IsGameClockRunning;
-        IsShotClockRunning = IsGameClockRunning; // Sync shot clock with game clock toggle
+        IsShotClockRunning = IsGameClockRunning;
 
         if (IsGameClockRunning && !MasterTimer!.Enabled)
         {
@@ -290,44 +363,60 @@
         }
 
         LogEvent(IsGameClockRunning ? "▶ Game Clock Started" : "⏸ Game Clock Paused");
+        await BroadcastGameStateAsync();
     }
 
-    private void ToggleShotClock()
+    private async Task ToggleShotClock()
     {
         IsShotClockRunning = !IsShotClockRunning;
+        await BroadcastGameStateAsync();
     }
 
-    private void ResetGameClock()
+    private async Task ResetGameClock()
     {
         IsGameClockRunning = false;
-        GameClockSeconds = 600; // 10 minutes
+        GameClockSeconds = 600;
         LogEvent("🔄 Game Clock Reset to 10:00");
+        await BroadcastGameStateAsync();
     }
 
-    private void ResetShotClock(int seconds)
+    private async Task ResetShotClock(int seconds, bool suppressBroadcast = false)
     {
         ShotClockSeconds = seconds;
         LogEvent($"⏱ Shot Clock Reset to {seconds}s");
+
+        if (!suppressBroadcast)
+        {
+            await BroadcastGameStateAsync();
+        }
     }
 
-    private void NextPeriod()
+    private async Task NextPeriod()
     {
         Period++;
-        ResetGameClock();
-        ResetShotClock(24);
+        GameClockSeconds = 600;
+        ShotClockSeconds = 24;
+        IsGameClockRunning = false;
+        IsShotClockRunning = false;
+        LogEvent($"Entering {PeriodText} 🏀");
+
+        await BroadcastGameStateAsync();
     }
 
-    private void PreviousPeriod()
+    private async Task PreviousPeriod()
     {
         if (Period > 1)
         {
             Period--;
-            ResetGameClock();
-            ResetShotClock(24);
+            GameClockSeconds = 600;
+            ShotClockSeconds = 24;
+            IsGameClockRunning = false;
+            IsShotClockRunning = false;
+
+            await BroadcastGameStateAsync();
         }
     }
 
-    // Helpers
     private string FormatTime(int totalSeconds)
     {
         int minutes = totalSeconds / 60;
@@ -349,9 +438,14 @@
         Navigation.NavigateTo("/dashboard");
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         MasterTimer?.Stop();
         MasterTimer?.Dispose();
+
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
     }
 }

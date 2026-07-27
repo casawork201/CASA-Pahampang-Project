@@ -252,3 +252,56 @@
     .log-time { color: #64748b; font-weight: 700; font-size: 0.75rem; }
     .log-clock { color: #2563eb; font-weight: 700; font-size: 0.75rem; }
     .log-msg { font-weight: 600; }
+
+/* Possession Wrapper */
+.possession-toggle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 10px 0 14px 0;
+    width: 100%;
+}
+
+/* Base Possession Button */
+.btn-poss {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 16px;
+    background: #111827;
+    color: #4b5563;
+    border: 1px solid #374151;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    user-select: none;
+}
+
+/* Hover State */
+.btn-poss:hover {
+    background: #1f2937;
+    color: #9ca3af;
+    border-color: #4b5563;
+}
+
+/* Press State */
+.btn-poss:active {
+    transform: scale(0.97);
+}
+
+/* Illuminated LED Active State (When Possession is True) 🎯 */
+.btn-poss.active {
+    background: rgba(245, 158, 11, 0.12); /* Warm LED Translucent Glow */
+    color: #f59e0b;                        /* Arena Amber/Gold */
+    border-color: #f59e0b;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.25),
+                inset 0 0 8px rgba(245, 158, 11, 0.15);
+    text-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+    font-weight: 800;
+}

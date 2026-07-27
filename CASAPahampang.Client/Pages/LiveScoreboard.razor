@@ -1,8 +1,9 @@
 ﻿@page "/scoreboard"
 
+@using Microsoft.AspNetCore.SignalR.Client
 @using static Microsoft.AspNetCore.Components.Web.RenderMode
-@using System.Timers
-@implements IDisposable
+@using System.Text.Json
+@implements IAsyncDisposable
 @rendermode InteractiveWebAssembly
 @inject NavigationManager Navigation
 
@@ -26,7 +27,6 @@
     </header>
 
     <div class="arena-board">
-        
         <div class="team-card team-home">
             <div class="team-meta">
                 <img src="@Team1LogoUrl" alt="@Team1Name Logo" class="team-logo" />
@@ -110,7 +110,6 @@
                 </div>
             </div>
         </div>
-
     </div>
 
     <div class="ticker-section">
@@ -138,7 +137,6 @@
     </div>
 </div>
 
-
 @code {
     public class PlayEvent
     {
@@ -146,57 +144,97 @@
         public string Message { get; set; } = string.Empty;
     }
 
-    private bool IsLive = true;
+    public class BasketballStatePayload
+    {
+        public string Team1Name { get; set; } = string.Empty;
+        public string Team1LogoUrl { get; set; } = string.Empty;
+        public int Team1Score { get; set; }
+        public int Team1Fouls { get; set; }
+        public int Team1Timeouts { get; set; }
+        public bool Team1Possession { get; set; }
+
+        public string Team2Name { get; set; } = string.Empty;
+        public string Team2LogoUrl { get; set; } = string.Empty;
+        public int Team2Score { get; set; }
+        public int Team2Fouls { get; set; }
+        public int Team2Timeouts { get; set; }
+        public bool Team2Possession { get; set; }
+
+        public int Period { get; set; }
+        public string PeriodText { get; set; } = string.Empty;
+        public int GameClockSeconds { get; set; }
+        public int ShotClockSeconds { get; set; }
+        public bool IsLive { get; set; }
+        public List<PlayEvent> RecentEvents { get; set; } = new();
+    }
+
+    private HubConnection? hubConnection;
+
+    private bool IsLive = false;
 
     private string Team1Name = "Tigers";
     private string Team1LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Tigers";
-    private int Team1Score = 88;
-    private int Team1Fouls = 3;
-    private int Team1Timeouts = 2;
-    private bool Team1Possession = true;
+    private int Team1Score = 0;
+    private int Team1Fouls = 0;
+    private int Team1Timeouts = 0;
+    private bool Team1Possession = false;
 
     private string Team2Name = "Eagles";
     private string Team2LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Eagles";
-    private int Team2Score = 82;
-    private int Team2Fouls = 5;
-    private int Team2Timeouts = 1;
+    private int Team2Score = 0;
+    private int Team2Fouls = 0;
+    private int Team2Timeouts = 0;
     private bool Team2Possession = false;
 
-    private int Period = 4;
-    private string PeriodText => Period switch
+    private int Period = 1;
+    private string PeriodText = "1ST QUARTER";
+
+    private int GameClockSeconds = 600;
+    private int ShotClockSeconds = 24;
+
+    private List<PlayEvent> RecentEvents = new();
+
+    protected override async Task OnInitializedAsync()
     {
-        1 => "1ST QUARTER",
-        2 => "2ND QUARTER",
-        3 => "3RD QUARTER",
-        4 => "4TH QUARTER",
-        _ => $"OVERTIME {Period - 4}"
-    };
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/basketballhub"))
+            .WithAutomaticReconnect()
+            .Build();
 
-    private int GameClockSeconds = 165; // 02:45
-    private int ShotClockSeconds = 18;
-
-    private Timer? AutoRefreshTimer;
-
-    private List<PlayEvent> RecentEvents = new()
-    {
-        new PlayEvent { GameClock = 172, Message = "Tigers #23 made a 3-point field goal! 🎯" },
-        new PlayEvent { GameClock = 195, Message = "Eagles #10 made 2 free throws. 🏀" },
-        new PlayEvent { GameClock = 210, Message = "Personal foul on Tigers #7. 🚨" }
-    };
-
-    protected override void OnInitialized()
-    {
-        AutoRefreshTimer = new Timer(1000);
-        AutoRefreshTimer.Elapsed += (s, e) =>
+        hubConnection.On<string>("ReceiveBasketballState", (json) =>
         {
-            if (IsLive && GameClockSeconds > 0)
+            var data = JsonSerializer.Deserialize<BasketballStatePayload>(json);
+            if (data is not null)
             {
-                GameClockSeconds--;
-                if (ShotClockSeconds > 0) ShotClockSeconds--;
+                Team1Name = data.Team1Name;
+                Team1LogoUrl = data.Team1LogoUrl;
+                Team1Score = data.Team1Score;
+                Team1Fouls = data.Team1Fouls;
+                Team1Timeouts = data.Team1Timeouts;
+                Team1Possession = data.Team1Possession;
+
+                Team2Name = data.Team2Name;
+                Team2LogoUrl = data.Team2LogoUrl;
+                Team2Score = data.Team2Score;
+                Team2Fouls = data.Team2Fouls;
+                Team2Timeouts = data.Team2Timeouts;
+                Team2Possession = data.Team2Possession;
+
+                Period = data.Period;
+                PeriodText = data.PeriodText;
+                GameClockSeconds = data.GameClockSeconds;
+                ShotClockSeconds = data.ShotClockSeconds;
+                IsLive = data.IsLive;
+                RecentEvents = data.RecentEvents ?? new();
+
                 InvokeAsync(StateHasChanged);
             }
-        };
-        AutoRefreshTimer.Start();
+        });
+
+        await hubConnection.StartAsync();
+
+        // Request initial state snapshot from active scorekeeper console ⚡
+        await hubConnection.SendAsync("RequestBasketballState");
     }
 
     private string FormatTime(int totalSeconds)
@@ -211,9 +249,11 @@
         Navigation.NavigateTo("/dashboard");
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
-        AutoRefreshTimer?.Stop();
-        AutoRefreshTimer?.Dispose();
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
     }
 }
