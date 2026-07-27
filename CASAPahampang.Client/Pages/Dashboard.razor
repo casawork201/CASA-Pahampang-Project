@@ -1,6 +1,8 @@
 ﻿@page "/dashboard"
 
+@using Microsoft.AspNetCore.SignalR.Client
 @using static Microsoft.AspNetCore.Components.Web.RenderMode
+@implements IAsyncDisposable
 @rendermode InteractiveWebAssembly
 @inject NavigationManager Navigation
 
@@ -10,6 +12,9 @@
             <button class="btn-back" @onclick="GoBack" type="button">
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
                 Back
+            </button>
+            <button class="btn-bingo" @onclick="GoToBingo" type="button">
+                🎯 Bingo Game
             </button>
             <div class="header-title">
                 <p class="branding-subtitle">CENTRAL AZUCARERA DE SAN ANTONIO</p>
@@ -179,7 +184,6 @@
     </div>
 </div>
 
-
 @code {
     public class Team
     {
@@ -209,6 +213,7 @@
         public string AvatarUrl { get; set; } = string.Empty;
     }
 
+    private HubConnection? hubConnection;
     private string NewMessageText = string.Empty;
 
     private List<ChatMessage> ChatMessages = new()
@@ -280,32 +285,78 @@
         }
     };
 
-    private void SendMessage()
+    protected override async Task OnInitializedAsync()
     {
-        if (!string.IsNullOrWhiteSpace(NewMessageText))
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/chathub"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        hubConnection.On<string, string, string, DateTime>("ReceiveChatMessage", (user, message, avatarUrl, timestamp) =>
         {
             ChatMessages.Add(new ChatMessage
             {
-                User = "You",
-                Message = NewMessageText,
-                Timestamp = DateTime.Now,
-                IsUser = true,
-                AvatarUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=You"
+                User = user,
+                Message = message,
+                AvatarUrl = avatarUrl,
+                Timestamp = timestamp,
+                IsUser = (user == "You")
             });
+
+            _ = InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    private async Task SendMessage()
+    {
+        if (!string.IsNullOrWhiteSpace(NewMessageText))
+        {
+            var text = NewMessageText;
             NewMessageText = string.Empty;
+
+            if (hubConnection is not null && hubConnection.State == HubConnectionState.Connected)
+            {
+                await hubConnection.SendAsync("SendChatMessage", "You", text, "https://api.dicebear.com/7.x/identicon/svg?seed=You", DateTime.Now);
+            }
+            else
+            {
+                ChatMessages.Add(new ChatMessage
+                {
+                    User = "You",
+                    Message = text,
+                    Timestamp = DateTime.Now,
+                    IsUser = true,
+                    AvatarUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=You"
+                });
+            }
         }
     }
 
-    private void HandleKeyUp(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    private async Task HandleKeyUp(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
-            SendMessage();
+            await SendMessage();
         }
     }
 
     private void GoBack()
     {
         Navigation.NavigateTo("/");
+    }
+
+    private void GoToBingo()
+    {
+        Navigation.NavigateTo("/bingo");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
     }
 }

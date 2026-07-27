@@ -22,7 +22,7 @@
     .header-left {
         display: flex;
         align-items: center;
-        gap: 1.5rem;
+        gap: 1rem;
     }
 
     .btn-back {
@@ -48,6 +48,28 @@
     .btn-back svg {
         width: 18px;
         height: 18px;
+    }
+
+    /* Bingo Header Button */
+    .btn-bingo {
+        background: #fef3c7;
+        color: #b45309;
+        border: 1px solid #fde68a;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn-bingo:hover {
+        background: #fde68a;
+        color: #78350f;
+        box-shadow: 0 2px 4px rgba(180, 83, 9, 0.15);
     }
 
     .branding-subtitle {
