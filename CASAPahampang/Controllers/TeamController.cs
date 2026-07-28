@@ -1,7 +1,7 @@
+using CASAPahampang.Client.Dtos;
 using CASAPahampang.Data;
 using CASAPahampang.Hubs;
 using CASAPahampang.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +16,7 @@ public class TeamController : ControllerBase
     private readonly IHubContext<BasketballHub> _basketballHub;
 
     public TeamController(
-        ApplicationDbContext context, 
+        ApplicationDbContext context,
         IHubContext<BasketballHub> basketballHub)
     {
         _context = context;
@@ -25,14 +25,19 @@ public class TeamController : ControllerBase
 
     // GET: api/team
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Team>>> GetTeams()
+    public async Task<ActionResult<IEnumerable<TeamDto>>> GetTeams()
     {
-        return await _context.Teams.AsNoTracking().ToListAsync();
+        var teams = await _context.Teams
+            .AsNoTracking()
+            .Select(t => t.ToDto())
+            .ToListAsync();
+
+        return Ok(teams);
     }
 
-    // GET: api/team/5
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<Team>> GetTeam(int id)
+    // GET: api/team/{id}
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<TeamDto>> GetTeam(Guid id)
     {
         var team = await _context.Teams.FindAsync(id);
 
@@ -41,37 +46,56 @@ public class TeamController : ControllerBase
             return NotFound();
         }
 
-        return team;
+        return Ok(team.ToDto());
     }
 
     // POST: api/team
     [HttpPost]
-    public async Task<ActionResult<Team>> CreateTeam([FromBody] Team team)
+    public async Task<ActionResult<TeamDto>> CreateTeam([FromBody] TeamDto dto)
     {
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
         }
 
+        var team = new Team
+        {
+            Id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id,
+            Name = dto.Name,
+            Logo = dto.Logo,
+            Record = dto.Record
+        };
+
         _context.Teams.Add(team);
         await _context.SaveChangesAsync();
 
-        // ⚡ Broadcast new team creation to all SignalR clients
-        await _basketballHub.Clients.All.SendAsync("ReceiveTeamCreated", team);
+        var createdDto = team.ToDto();
 
-        return CreatedAtAction(nameof(GetTeam), new { id = team.Id }, team);
+        // ⚡ Broadcast new team creation via SignalR
+        await _basketballHub.Clients.All.SendAsync("ReceiveTeamCreated", createdDto);
+
+        return CreatedAtAction(nameof(GetTeam), new { id = createdDto.Id }, createdDto);
     }
 
-    // PUT: api/team/5
-    [HttpPut("{id:int}")]
-    public async Task<IActionResult> UpdateTeam(Guid id, [FromBody] Team team)
+    // PUT: api/team/{id}
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateTeam(Guid id, [FromBody] TeamDto dto)
     {
-        if (id != team.Id)
+        if (id != dto.Id)
         {
             return BadRequest("Team ID mismatch.");
         }
 
-        _context.Entry(team).State = EntityState.Modified;
+        var team = await _context.Teams.FindAsync(id);
+        if (team == null)
+        {
+            return NotFound();
+        }
+
+        // Update properties
+        team.Name = dto.Name;
+        team.Logo = dto.Logo;
+        team.Record = dto.Record;
 
         try
         {
@@ -86,14 +110,14 @@ public class TeamController : ControllerBase
             throw;
         }
 
-        // ⚡ Broadcast real-time team update (score, logo, record, etc.)
-        await _basketballHub.Clients.All.SendAsync("ReceiveTeamUpdated", team);
+        // ⚡ Broadcast real-time update to all connected clients
+        await _basketballHub.Clients.All.SendAsync("ReceiveTeamUpdated", dto);
 
         return NoContent();
     }
 
-    // DELETE: api/team/5
-    [HttpDelete("{id:Guid}")]
+    // DELETE: api/team/{id}
+    [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteTeam(Guid id)
     {
         var team = await _context.Teams.FindAsync(id);
@@ -105,7 +129,7 @@ public class TeamController : ControllerBase
         _context.Teams.Remove(team);
         await _context.SaveChangesAsync();
 
-        // ⚡ Broadcast team deletion to all SignalR clients
+        // ⚡ Broadcast deletion
         await _basketballHub.Clients.All.SendAsync("ReceiveTeamDeleted", id);
 
         return NoContent();
@@ -114,5 +138,20 @@ public class TeamController : ControllerBase
     private bool TeamExists(Guid id)
     {
         return _context.Teams.Any(e => e.Id == id);
+    }
+}
+
+// 🛠️ Internal Entity-to-DTO Mapping Extensions
+internal static class TeamMappingExtensions
+{
+    public static TeamDto ToDto(this Team team)
+    {
+        return new TeamDto
+        {
+            Id = team.Id,
+            Name = team.Name,
+            Logo = team.Logo,
+            Record = team.Record
+        };
     }
 }
