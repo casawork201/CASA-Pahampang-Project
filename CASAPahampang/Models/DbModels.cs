@@ -7,13 +7,16 @@ namespace CASAPahampang. Models;
 public class Team
 {
     [Key]
-    public Guid Name { get; set; } = Guid.NewGuid();
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Name { get; set; } = string.Empty!;
     public byte[] Logo { get; set; } = null!;
     public string Record { get; set; } = "0-0";
 }
 [Table("Match")]
 public class Match
 {
+    [Key]
+    public Guid Id { get; set; } = Guid.NewGuid();
     public int GameNumber { get; set; }
     public string Venue { get; set; } = "Main Gym";
     public Team Team1 { get; set; } = new();
@@ -28,6 +31,8 @@ public class Match
 [Table("ChatMessage")]
 public class ChatMessage
 {
+    [Key]
+    public Guid Id { get; set; } = Guid.NewGuid();
     public string Username { get; set; } = string.Empty!;
     public string Message { get; set; } = string.Empty!;
     public DateTime TimeStamp { get; set; } = new();
@@ -37,7 +42,8 @@ public class ChatMessage
 [Table("AvatarOption")]
 public class AvatarOption
 {
-    public Guid Id { get; set; }
+    [Key]
+    public Guid Id { get; set; } = Guid.NewGuid();
     public string Name { get; set; } = string.Empty!;
     public string Url { get; set; } = string.Empty!;
 }

@@ -1,10 +1,14 @@
 using CASAPahampang;
 using CASAPahampang.Client.Pages;
 using CASAPahampang.Components;
+using CASAPahampang.Data;
 using CASAPahampang.Hubs;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(connectionString));
 builder.Services.AddSignalR();
 // Add services to the container.
 builder.Services.AddRazorComponents()
