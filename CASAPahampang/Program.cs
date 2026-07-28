@@ -44,4 +44,5 @@ app.MapHub<BingoHub>("/bingohub");
 app.MapHub<VolleyballHub>("/volleyballhub");
 app.MapHub<BasketballHub>("/basketballhub");
 app.MapHub<ChatHub>("/chathub");
+app.MapHub<TeamHub>("/teamhub");
 app.Run();

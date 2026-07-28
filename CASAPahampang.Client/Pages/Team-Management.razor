@@ -1,0 +1,446 @@
+﻿@page "/teams/register"
+
+@using CASAPahampang.Client.Dtos
+@using Microsoft.AspNetCore.SignalR.Client
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+@using System.Net.Http.Json
+@implements IAsyncDisposable
+@rendermode InteractiveWebAssembly
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<div class="registration-container">
+    <header class="page-header">
+        <div class="header-left">
+            <button class="btn-back" @onclick="GoToDashboard" type="button">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                Dashboard
+            </button>
+            <div class="header-title">
+                <p class="branding-subtitle">CENTRAL AZUCARERA DE SAN ANTONIO</p>
+                <h1>Team Management 🛡️</h1>
+            </div>
+        </div>
+        <div class="hub-status-badge @(isHubConnected ? "connected" : "disconnected")">
+            <span class="status-dot"></span>
+            @(isHubConnected ? "Live Connection" : "Reconnecting...")
+        </div>
+    </header>
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success d-flex align-items-center mb-4">
+            <span>✅ @successMessage</span>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger d-flex align-items-center mb-4">
+            <span>⚠️ @errorMessage</span>
+        </div>
+    }
+
+    <div class="content-grid">
+        <div class="panel-column">
+            <div class="card-panel">
+                <div class="panel-header-flex mb-3">
+                    <h2 class="panel-title mb-0">@(isEditing ? "Edit Team" : "Register New Team")</h2>
+                    @if (isEditing)
+                    {
+                        <button type="button" class="btn-cancel-edit" @onclick="CancelEdit">Cancel</button>
+                    }
+                </div>
+
+                <EditForm Model="teamModel" OnValidSubmit="HandleSaveTeam">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-group mb-3">
+                        <label for="team-name" class="form-label">Team Name</label>
+                        <InputText id="team-name" class="form-control custom-input" 
+                                   @bind-Value="teamModel.Name" placeholder="e.g., CASA Panthers" />
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="team-record" class="form-label">Record</label>
+                        <InputText id="team-record" class="form-control custom-input" 
+                                   @bind-Value="teamModel.Record" placeholder="0-0" />
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label class="form-label">Team Logo</label>
+                        <div class="logo-upload-wrapper">
+                            <InputFile OnChange="HandleLogoSelected" 
+                                accept="image/png, image/jpeg, image/webp, image/svg+xml, .svg" 
+                                id="logo-file-input" 
+                                class="d-none" />
+                            <label for="logo-file-input" class="upload-dropzone">
+                                @if (!string.IsNullOrEmpty(logoPreviewUrl))
+                                {
+                                    <img src="@logoPreviewUrl" alt="Logo Preview" class="logo-preview-img" />
+                                    <span class="change-file-text">Click to change image</span>
+                                }
+                                else
+                                {
+                                    <div class="upload-placeholder">
+                                        <svg class="upload-icon" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+                                        </svg>
+                                        <span>Click or drag image to upload logo</span>
+                                        <small class="text-muted">PNG, JPG, or WEBP (Max 2MB)</small>
+                                    </div>
+                                }
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-submit" disabled="@isSubmitting">
+                            @if (isSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                <span>Saving...</span>
+                            }
+                            else
+                            {
+                                <span>@(isEditing ? "Update Team ✏️" : "Register Team 🚀")</span>
+                            }
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+
+        <div class="panel-column">
+            <div class="card-panel">
+                <div class="panel-header-flex">
+                    <h2 class="panel-title mb-0">Registered Teams</h2>
+                    <span class="badge-count">@RegisteredTeams.Count Teams</span>
+                </div>
+
+                <div class="team-grid mt-3">
+                    @if (isLoadingList)
+                    {
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p class="mt-2 text-muted">Loading teams...</p>
+                        </div>
+                    }
+                    else if (!RegisteredTeams.Any())
+                    {
+                        <div class="empty-state">
+                            <p class="text-muted">No teams registered yet. Use the form to add one!</p>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var team in RegisteredTeams)
+                        {
+                            <div class="team-card @(editingTeamId == team.Id ? "active-edit" : "")">
+                                <img src="@GetImageSrc(team.Logo)" alt="@team.Name Logo" class="team-card-logo" />
+                                <div class="team-card-info">
+                                    <h3 class="team-card-name">@team.Name</h3>
+                                    <span class="team-card-record">Record: @team.Record</span>
+                                </div>
+                                <div class="card-actions">
+                                    <button type="button" class="btn-action btn-edit" @onclick="() => EditTeam(team)" title="Edit Team">
+                                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                                    </button>
+                                    <button type="button" class="btn-action btn-delete" @onclick="() => DeleteTeam(team.Id)" title="Delete Team">
+                                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    private TeamDto teamModel = new();
+    private List<TeamDto> RegisteredTeams = new();
+    private HubConnection? teamHubConnection;
+
+    private Guid? editingTeamId = null;
+    private bool isEditing => editingTeamId != null;
+
+    private string? logoPreviewUrl;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+    private bool isSubmitting = false;
+    private bool isLoadingList = true;
+    private bool isHubConnected => teamHubConnection?.State == HubConnectionState.Connected;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTeams();
+        await SetupSignalRHub();
+    }
+
+    private async Task SetupSignalRHub()
+    {
+        teamHubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/teamhub"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        // ⚡ SignalR Listeners for Real-time Full CRUD Sync
+        teamHubConnection.On<TeamDto>("ReceiveTeamAdded", (addedTeam) =>
+        {
+            if (!RegisteredTeams.Any(t => t.Id == addedTeam.Id))
+            {
+                RegisteredTeams.Add(addedTeam);
+                InvokeAsync(StateHasChanged);
+            }
+        });
+
+        teamHubConnection.On<TeamDto>("ReceiveTeamUpdated", (updatedTeam) =>
+        {
+            var existing = RegisteredTeams.FirstOrDefault(t => t.Id == updatedTeam.Id);
+            if (existing != null)
+            {
+                existing.Name = updatedTeam.Name;
+                existing.Record = updatedTeam.Record;
+                if (updatedTeam.Logo != null && updatedTeam.Logo.Length > 0)
+                {
+                    existing.Logo = updatedTeam.Logo;
+                }
+                InvokeAsync(StateHasChanged);
+            }
+        });
+
+        teamHubConnection.On<Guid>("ReceiveTeamDeleted", (deletedTeamId) =>
+        {
+            RegisteredTeams.RemoveAll(t => t.Id == deletedTeamId);
+            if (editingTeamId == deletedTeamId)
+            {
+                CancelEdit();
+            }
+            InvokeAsync(StateHasChanged);
+        });
+
+        try
+        {
+            await teamHubConnection.StartAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"TeamHub error: {ex.Message}");
+        }
+    }
+
+    private async Task LoadTeams()
+    {
+        isLoadingList = true;
+        try
+        {
+            var teams = await Http.GetFromJsonAsync<List<TeamDto>>("api/team");
+            if (teams != null)
+            {
+                RegisteredTeams = teams;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load teams: {ex.Message}";
+        }
+        finally
+        {
+            isLoadingList = false;
+        }
+    }
+
+    private void EditTeam(TeamDto team)
+    {
+        editingTeamId = team.Id;
+        teamModel = new TeamDto
+        {
+            Id = team.Id,
+            Name = team.Name,
+            Record = team.Record,
+            Logo = team.Logo
+        };
+
+        if (team.Logo != null && team.Logo.Length > 0)
+        {
+            logoPreviewUrl = GetImageSrc(team.Logo);
+        }
+        else
+        {
+            logoPreviewUrl = null;
+        }
+
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+    }
+
+    private void CancelEdit()
+    {
+        editingTeamId = null;
+        teamModel = new TeamDto();
+        logoPreviewUrl = null;
+        errorMessage = string.Empty;
+    }
+
+    private async Task HandleLogoSelected(InputFileChangeEventArgs e)
+    {
+        errorMessage = string.Empty;
+        var file = e.File;
+
+        if (file != null)
+        {
+            if (file.Size > 2 * 1024 * 1024)
+            {
+                errorMessage = "File size exceeds 2MB limit.";
+                return;
+            }
+
+            try
+            {
+                var format = file.ContentType;
+                using var ms = new MemoryStream();
+
+                // 🎨 Check if the file is an SVG vector
+                bool isSvg = format == "image/svg+xml" || file.Name.EndsWith(".svg", StringComparison.OrdinalIgnoreCase);
+
+                if (isSvg)
+                {
+                    // Stream raw SVG vector directly without resizing
+                    using var stream = file.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
+                    await stream.CopyToAsync(ms);
+                    format = "image/svg+xml";
+                }
+                else
+                {
+                    // Resample raster images (PNG, JPG, WEBP)
+                    var resizedImage = await file.RequestImageFileAsync(format, 300, 300);
+                    using var stream = resizedImage.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
+                    await stream.CopyToAsync(ms);
+                }
+
+                teamModel.Logo = ms.ToArray();
+                logoPreviewUrl = $"data:{format};base64,{Convert.ToBase64String(teamModel.Logo)}";
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Error processing image: {ex.Message}";
+            }
+        }
+    }
+
+    private async Task HandleSaveTeam()
+    {
+        successMessage = string.Empty;
+        errorMessage = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(teamModel.Name))
+        {
+            errorMessage = "Please enter a valid team name.";
+            return;
+        }
+
+        isSubmitting = true;
+
+        try
+        {
+            HttpResponseMessage response;
+
+            if (isEditing)
+            {
+                // ✏️ UPDATE existing team (PUT api/team/{id})
+                response = await Http.PutAsJsonAsync($"api/team/{editingTeamId}", teamModel);
+            }
+            else
+            {
+                // 🚀 CREATE new team (POST api/team)
+                if (teamModel.Logo == null || teamModel.Logo.Length == 0)
+                {
+                    errorMessage = "Please upload a team logo.";
+                    isSubmitting = false;
+                    return;
+                }
+                response = await Http.PostAsJsonAsync("api/team", teamModel);
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = isEditing 
+                    ? $"Team '{teamModel.Name}' updated successfully!" 
+                    : $"Team '{teamModel.Name}' registered successfully!";
+
+                CancelEdit();
+            }
+            else
+            {
+                var details = await response.Content.ReadAsStringAsync();
+                errorMessage = $"Failed to save team. ({response.StatusCode}) {details}";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Network error: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task DeleteTeam(Guid teamId)
+    {
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+
+        try
+        {
+            var response = await Http.DeleteAsync($"api/team/{teamId}");
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = "Team removed successfully.";
+            }
+            else
+            {
+                errorMessage = "Could not delete team.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error deleting team: {ex.Message}";
+        }
+    }
+
+    private string GetImageSrc(byte[]? imageBytes)
+    {
+        if (imageBytes == null || imageBytes.Length == 0)
+            return "images/default-logo.png";
+
+        string base64 = Convert.ToBase64String(imageBytes);
+
+        // 🔍 Detect SVG magic header bytes: '<svg' (0x3C, 0x73, 0x76, 0x67)
+        if (imageBytes.Length >= 4 && 
+            imageBytes[0] == 0x3C && imageBytes[1] == 0x73 && 
+            imageBytes[2] == 0x76 && imageBytes[3] == 0x67)
+        {
+            return $"data:image/svg+xml;base64,{base64}";
+        }
+
+        return $"data:image/png;base64,{base64}";
+    }
+
+    private void GoToDashboard()
+    {
+        Navigation.NavigateTo("/dashboard");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (teamHubConnection is not null)
+        {
+            await teamHubConnection.DisposeAsync();
+        }
+    }
+}

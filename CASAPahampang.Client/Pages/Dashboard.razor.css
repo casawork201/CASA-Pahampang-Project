@@ -548,7 +548,7 @@
         margin-left: 2px;
     }
 
-    /* 📱 RESPONSIVE MEDIA QUERIES */
+    /* Responsive Media Queries */
     @media (max-width: 768px) {
         .dashboard-container {
             padding: 1rem 0.75rem;

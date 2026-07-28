@@ -64,6 +64,10 @@ build_metadata.AdditionalFiles.CssScope = b-ns4367438a
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvU2NvcmVrZWVwZXIucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-cbg1tlwp80
 
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/Team-Management.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvVGVhbS1NYW5hZ2VtZW50LnJhem9y
+build_metadata.AdditionalFiles.CssScope = b-thfw5slirn
+
 [/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/VolleyballScoreboard.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvVm9sbGV5YmFsbFNjb3JlYm9hcmQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-8i72rxyrvw

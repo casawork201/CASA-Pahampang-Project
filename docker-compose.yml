@@ -4,9 +4,11 @@ services:
     container_name: ts-casawasm-bff
     hostname: casa-pahampang-webapp
     environment:
-      - TS_AUTHKEY=tskey-auth-k1F8fvs35W11CNTRL-YBmi6vJsZydSRopGYc43zd9wku6cHczZS
+      - TS_AUTHKEY=${TS_AUTHKEY}
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_EXTRA_ARGS=--advertise-tags=tag:server
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: >
       sh -c "tailscaled & 
              sleep 5; 
@@ -34,12 +36,13 @@ services:
     environment:
       - ASPNETCORE_URLS=http://+:8080
       - ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
+      - ConnectionStrings__DefaultConnection=Host=host.docker.internal;Port=5432;Database=pahampangdb;Username=postgres;Password=${DB_PASSWORD}
       - AuthApiBaseUrl=https://casa-authgateway-service.taila207b7.ts.net
-      - Jwt__Key=THIS_IS_A_32_CHAR_MINIMUM_SECRET_KEY!!
+      - Jwt__Key=${JWT_KEY}
       - Jwt__Issuer=https://casa-authgateway-service.taila207b7.ts.net
       - Jwt__Audience=https://casa-authgateway-service.taila207b7.ts.net      
 
     volumes:
-      - ./pr-keys:/app/App_Data/DataProtection-Keys
+      - ./pr-keys:/root/.aspnet/DataProtection-Keys
     depends_on:
       - ts-casawasm-app

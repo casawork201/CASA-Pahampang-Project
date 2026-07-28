@@ -1,157 +1,184 @@
-using CASAPahampang.Client.Dtos;
-using CASAPahampang.Data;
-using CASAPahampang.Hubs;
-using CASAPahampang.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using CASAPahampang.Data;
+using CASAPahampang.Models;
+using CASAPahampang.Hubs;
+using CASAPahampang.Client.Dtos;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CASAPahampang.Controllers;
 
-[Route("api/[controller]")]
 [ApiController]
+[Route("api/[controller]")]
+[AllowAnonymous]
 public class TeamController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
-    private readonly IHubContext<BasketballHub> _basketballHub;
+    private readonly IHubContext<TeamHub> _teamHubContext;
 
-    public TeamController(
-        ApplicationDbContext context,
-        IHubContext<BasketballHub> basketballHub)
+    public TeamController(ApplicationDbContext context, IHubContext<TeamHub> teamHubContext)
     {
         _context = context;
-        _basketballHub = basketballHub;
+        _teamHubContext = teamHubContext;
     }
 
-    // GET: api/team
+    // ---------------------------------------------------------
+    // 1. READ ALL: GET api/team
+    // ---------------------------------------------------------
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<TeamDto>>> GetTeams()
+    public async Task<ActionResult<IEnumerable<TeamDto>>> GetAllTeams()
     {
-        var teams = await _context.Teams
-            .AsNoTracking()
-            .Select(t => t.ToDto())
-            .ToListAsync();
-
-        return Ok(teams);
-    }
-
-    // GET: api/team/{id}
-    [HttpGet("{id:guid}")]
-    public async Task<ActionResult<TeamDto>> GetTeam(Guid id)
-    {
-        var team = await _context.Teams.FindAsync(id);
-
-        if (team == null)
-        {
-            return NotFound();
-        }
-
-        return Ok(team.ToDto());
-    }
-
-    // POST: api/team
-    [HttpPost]
-    public async Task<ActionResult<TeamDto>> CreateTeam([FromBody] TeamDto dto)
-    {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
-        var team = new Team
-        {
-            Id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id,
-            Name = dto.Name,
-            Logo = dto.Logo,
-            Record = dto.Record
-        };
-
-        _context.Teams.Add(team);
-        await _context.SaveChangesAsync();
-
-        var createdDto = team.ToDto();
-
-        // ⚡ Broadcast new team creation via SignalR
-        await _basketballHub.Clients.All.SendAsync("ReceiveTeamCreated", createdDto);
-
-        return CreatedAtAction(nameof(GetTeam), new { id = createdDto.Id }, createdDto);
-    }
-
-    // PUT: api/team/{id}
-    [HttpPut("{id:guid}")]
-    public async Task<IActionResult> UpdateTeam(Guid id, [FromBody] TeamDto dto)
-    {
-        if (id != dto.Id)
-        {
-            return BadRequest("Team ID mismatch.");
-        }
-
-        var team = await _context.Teams.FindAsync(id);
-        if (team == null)
-        {
-            return NotFound();
-        }
-
-        // Update properties
-        team.Name = dto.Name;
-        team.Logo = dto.Logo;
-        team.Record = dto.Record;
-
         try
         {
-            await _context.SaveChangesAsync();
+            var teams = await _context.Teams
+                .AsNoTracking()
+                .Select(t => new TeamDto
+                {
+                    Id = t.Id,
+                    Name = t.Name,
+                    Record = t.Record,
+                    Logo = t.Logo
+                })
+                .ToListAsync();
+
+            return Ok(teams);
         }
-        catch (DbUpdateConcurrencyException)
+        catch (Exception ex)
         {
-            if (!TeamExists(id))
-            {
-                return NotFound();
-            }
-            throw;
+            // 🚨 Returns the exact server-side exception to the response body
+            return StatusCode(500, new 
+            { 
+                Error = ex.Message, 
+                InnerError = ex.InnerException?.Message,
+                Type = ex.GetType().Name
+            });
         }
-
-        // ⚡ Broadcast real-time update to all connected clients
-        await _basketballHub.Clients.All.SendAsync("ReceiveTeamUpdated", dto);
-
-        return NoContent();
     }
 
-    // DELETE: api/team/{id}
+    // ---------------------------------------------------------
+    // 2. READ ONE: GET api/team/{id}
+    // ---------------------------------------------------------
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<TeamDto>> GetTeamById(Guid id)
+    {
+        var team = await _context.Teams
+            .AsNoTracking()
+            .Where(t => t.Id == id)
+            .Select(t => new TeamDto
+            {
+                Id = t.Id,
+                Name = t.Name,
+                Record = t.Record,
+                Logo = t.Logo
+            })
+            .FirstOrDefaultAsync();
+
+        if (team == null)
+        {
+            return NotFound(new { Message = $"Team with ID {id} was not found." });
+        }
+
+        return Ok(team);
+    }
+
+    // ---------------------------------------------------------
+    // 3. CREATE: POST api/team
+    // ---------------------------------------------------------
+    [HttpPost]
+    public async Task<ActionResult<TeamDto>> CreateTeam([FromBody] TeamDto newTeamDto)
+    {
+        if (newTeamDto == null || string.IsNullOrWhiteSpace(newTeamDto.Name))
+        {
+            return BadRequest(new { Message = "Invalid team data provided." });
+        }
+
+        var teamEntity = new Team
+        {
+            Id = newTeamDto.Id != Guid.Empty ? newTeamDto.Id : Guid.NewGuid(),
+            Name = newTeamDto.Name,
+            Record = string.IsNullOrWhiteSpace(newTeamDto.Record) ? "0-0" : newTeamDto.Record,
+            Logo = newTeamDto.Logo
+        };
+
+        _context.Teams.Add(teamEntity);
+        await _context.SaveChangesAsync();
+
+        var createdDto = new TeamDto
+        {
+            Id = teamEntity.Id,
+            Name = teamEntity.Name,
+            Record = teamEntity.Record,
+            Logo = teamEntity.Logo
+        };
+
+        // ⚡ Broadcast creation via SignalR
+        await _teamHubContext.Clients.All.SendAsync("ReceiveTeamAdded", createdDto);
+
+        return CreatedAtAction(nameof(GetTeamById), new { id = createdDto.Id }, createdDto);
+    }
+
+    // ---------------------------------------------------------
+    // 4. UPDATE: PUT api/team/{id}
+    // ---------------------------------------------------------
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateTeam(Guid id, [FromBody] TeamDto updatedTeamDto)
+    {
+        if (updatedTeamDto == null)
+        {
+            return BadRequest(new { Message = "Updated team payload cannot be null." });
+        }
+
+        var existingTeam = await _context.Teams.FindAsync(id);
+        if (existingTeam == null)
+        {
+            return NotFound(new { Message = $"Team with ID {id} was not found." });
+        }
+
+        // Apply field updates
+        existingTeam.Name = updatedTeamDto.Name;
+        existingTeam.Record = updatedTeamDto.Record;
+
+        // Preserve existing logo if no new image binary was uploaded
+        if (updatedTeamDto.Logo != null && updatedTeamDto.Logo.Length > 0)
+        {
+            existingTeam.Logo = updatedTeamDto.Logo;
+        }
+
+        await _context.SaveChangesAsync();
+
+        var resultDto = new TeamDto
+        {
+            Id = existingTeam.Id,
+            Name = existingTeam.Name,
+            Record = existingTeam.Record,
+            Logo = existingTeam.Logo
+        };
+
+        // ⚡ Broadcast update via SignalR
+        await _teamHubContext.Clients.All.SendAsync("ReceiveTeamUpdated", resultDto);
+
+        return Ok(resultDto);
+    }
+
+    // ---------------------------------------------------------
+    // 5. DELETE: DELETE api/team/{id}
+    // ---------------------------------------------------------
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteTeam(Guid id)
     {
         var team = await _context.Teams.FindAsync(id);
         if (team == null)
         {
-            return NotFound();
+            return NotFound(new { Message = $"Team with ID {id} was not found." });
         }
 
         _context.Teams.Remove(team);
         await _context.SaveChangesAsync();
 
-        // ⚡ Broadcast deletion
-        await _basketballHub.Clients.All.SendAsync("ReceiveTeamDeleted", id);
+        // ⚡ Broadcast deletion via SignalR
+        await _teamHubContext.Clients.All.SendAsync("ReceiveTeamDeleted", id);
 
         return NoContent();
-    }
-
-    private bool TeamExists(Guid id)
-    {
-        return _context.Teams.Any(e => e.Id == id);
-    }
-}
-
-// 🛠️ Internal Entity-to-DTO Mapping Extensions
-internal static class TeamMappingExtensions
-{
-    public static TeamDto ToDto(this Team team)
-    {
-        return new TeamDto
-        {
-            Id = team.Id,
-            Name = team.Name,
-            Logo = team.Logo,
-            Record = team.Record
-        };
     }
 }

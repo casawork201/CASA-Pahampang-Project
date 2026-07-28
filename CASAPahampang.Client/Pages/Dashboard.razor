@@ -2,6 +2,7 @@
 
 @using Microsoft.AspNetCore.SignalR.Client
 @using static Microsoft.AspNetCore.Components.Web.RenderMode
+@using CASAPahampang.Client.Dtos
 @implements IAsyncDisposable
 @rendermode InteractiveWebAssembly
 @inject NavigationManager Navigation
@@ -50,19 +51,19 @@
                             <div class="match-versus">
                                 <div class="team-cell team-left">
                                     <div class="team-text">
-                                        <span class="team-name">@match.Team1.Name</span>
-                                        <span class="team-record">@match.Team1.Record</span>
+                                        <span class="team-name">@(match.Team1?.Name ?? "TBD")</span>
+                                        <span class="team-record">@(match.Team1?.Record ?? "0-0")</span>
                                     </div>
-                                    <img src="@match.Team1.LogoUrl" alt="@match.Team1.Name Logo" class="team-logo" />
+                                    <img src="@GetImageSrc(match.Team1?.Logo)" alt="@(match.Team1?.Name ?? "Team") Logo" class="team-logo" />
                                 </div>
 
                                 <div class="score-cell">
                                     @if (match.IsLive)
                                     {
                                         <div class="live-score">
-                                            <span>@match.Team1.Score</span>
+                                            <span>@match.Team1Score</span>
                                             <span class="score-dash">-</span>
-                                            <span>@match.Team2.Score</span>
+                                            <span>@match.Team2Score</span>
                                         </div>
                                         <span class="status-badge status-live">@match.StatusText</span>
                                     }
@@ -74,10 +75,10 @@
                                 </div>
 
                                 <div class="team-cell team-right">
-                                    <img src="@match.Team2.LogoUrl" alt="@match.Team2.Name Logo" class="team-logo" />
+                                    <img src="@GetImageSrc(match.Team2?.Logo)" alt="@(match.Team2?.Name ?? "Team") Logo" class="team-logo" />
                                     <div class="team-text">
-                                        <span class="team-name">@match.Team2.Name</span>
-                                        <span class="team-record">@match.Team2.Record</span>
+                                        <span class="team-name">@(match.Team2?.Name ?? "TBD")</span>
+                                        <span class="team-record">@(match.Team2?.Record ?? "0-0")</span>
                                     </div>
                                 </div>
                             </div>
@@ -109,19 +110,19 @@
                             <div class="match-versus">
                                 <div class="team-cell team-left">
                                     <div class="team-text">
-                                        <span class="team-name">@match.Team1.Name</span>
-                                        <span class="team-record">@match.Team1.Record</span>
+                                        <span class="team-name">@(match.Team1?.Name ?? "TBD")</span>
+                                        <span class="team-record">@(match.Team1?.Record ?? "0-0")</span>
                                     </div>
-                                    <img src="@match.Team1.LogoUrl" alt="@match.Team1.Name Logo" class="team-logo" />
+                                    <img src="@GetImageSrc(match.Team1?.Logo)" alt="@(match.Team1?.Name ?? "Team") Logo" class="team-logo" />
                                 </div>
 
                                 <div class="score-cell">
                                     @if (match.IsLive)
                                     {
                                         <div class="live-score">
-                                            <span>@match.Team1.Score</span>
+                                            <span>@match.Team1Score</span>
                                             <span class="score-dash">-</span>
-                                            <span>@match.Team2.Score</span>
+                                            <span>@match.Team2Score</span>
                                         </div>
                                         <span class="status-badge status-live">@match.StatusText</span>
                                     }
@@ -133,10 +134,10 @@
                                 </div>
 
                                 <div class="team-cell team-right">
-                                    <img src="@match.Team2.LogoUrl" alt="@match.Team2.Name Logo" class="team-logo" />
+                                    <img src="@GetImageSrc(match.Team2?.Logo)" alt="@(match.Team2?.Name ?? "Team") Logo" class="team-logo" />
                                     <div class="team-text">
-                                        <span class="team-name">@match.Team2.Name</span>
-                                        <span class="team-record">@match.Team2.Record</span>
+                                        <span class="team-name">@(match.Team2?.Name ?? "TBD")</span>
+                                        <span class="team-record">@(match.Team2?.Record ?? "0-0")</span>
                                     </div>
                                 </div>
                             </div>
@@ -198,8 +199,8 @@
                                 <img src="@msg.AvatarUrl" alt="Avatar" class="chat-avatar" />
                                 <div class="msg-bubble">
                                     <div class="msg-header">
-                                        <span class="msg-user">@msg.User</span>
-                                        <span class="msg-time">@msg.Timestamp.ToString("hh:mm tt")</span>
+                                        <span class="msg-user">@msg.Username</span>
+                                        <span class="msg-time">@msg.TimeStamp.ToString("hh:mm tt")</span>
                                     </div>
                                     <div class="msg-text">@msg.Message</div>
                                 </div>
@@ -223,42 +224,10 @@
 </div>
 
 @code {
-    public class Team
-    {
-        public string Name { get; set; } = string.Empty;
-        public string LogoUrl { get; set; } = string.Empty;
-        public string Record { get; set; } = "0-0";
-        public int Score { get; set; }
-    }
+    private HubConnection? chatHubConnection;
+    private HubConnection? basketballHubConnection;
+    private HubConnection? volleyballHubConnection;
 
-    public class Match
-    {
-        public int GameNumber { get; set; }
-        public string Venue { get; set; } = "Main Gym";
-        public Team Team1 { get; set; } = new();
-        public Team Team2 { get; set; } = new();
-        public bool IsLive { get; set; }
-        public string StatusText { get; set; } = string.Empty;
-        public string PeriodDetails { get; set; } = string.Empty;
-    }
-
-    public class ChatMessage
-    {
-        public string User { get; set; } = string.Empty;
-        public string Message { get; set; } = string.Empty;
-        public DateTime Timestamp { get; set; } = DateTime.Now;
-        public bool IsUser { get; set; }
-        public string AvatarUrl { get; set; } = string.Empty;
-    }
-
-    public class AvatarOption
-    {
-        public string Id { get; set; } = string.Empty;
-        public string Name { get; set; } = string.Empty;
-        public string Url { get; set; } = string.Empty;
-    }
-
-    private HubConnection? hubConnection;
     private string NewMessageText = string.Empty;
     private string CurrentUsername = "User";
 
@@ -269,115 +238,191 @@
     private string SelectedAvatarUrl = "https://api.dicebear.com/7.x/bottts/svg?seed=Panther";
     private bool showAvatarPicker = false;
 
-    private List<AvatarOption> AvatarList = new()
+    private List<AvatarOptionDto> AvatarList = new()
     {
-        new AvatarOption { Id = "1", Name = "Panther", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Panther" },
-        new AvatarOption { Id = "2", Name = "Eagle", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Eagle" },
-        new AvatarOption { Id = "3", Name = "Tiger", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Tiger" },
-        new AvatarOption { Id = "4", Name = "Spiker", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Spiker" },
-        new AvatarOption { Id = "5", Name = "Falcon", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Falcon" },
-        new AvatarOption { Id = "6", Name = "Blaze", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Blaze" },
-        new AvatarOption { Id = "7", Name = "Knight", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Knight" },
-        new AvatarOption { Id = "8", Name = "Rocket", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Rocket" }
+        new AvatarOptionDto { Id = Guid.NewGuid(), Name = "Panther", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Panther" },
+        new AvatarOptionDto { Id = Guid.NewGuid(), Name = "Eagle", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Eagle" },
+        new AvatarOptionDto { Id = Guid.NewGuid(), Name = "Tiger", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Tiger" },
+        new AvatarOptionDto { Id = Guid.NewGuid(), Name = "Spiker", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Spiker" },
+        new AvatarOptionDto { Id = Guid.NewGuid(), Name = "Falcon", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Falcon" },
+        new AvatarOptionDto { Id = Guid.NewGuid(), Name = "Blaze", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Blaze" },
+        new AvatarOptionDto { Id = Guid.NewGuid(), Name = "Knight", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Knight" },
+        new AvatarOptionDto { Id = Guid.NewGuid(), Name = "Rocket", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Rocket" }
     };
 
-    private List<ChatMessage> ChatMessages = new();
+    private List<ChatMessageDto> ChatMessages = new();
 
-    private List<Match> BasketballMatches = new()
+    private List<MatchDto> BasketballMatches = new()
     {
-        new Match {
+        new MatchDto {
+            Id = Guid.NewGuid(),
             GameNumber = 1,
             Venue = "Main Gym",
             IsLive = false,
             StatusText = "8:00 PM PHT",
             PeriodDetails = "Neutral Site",
-            Team1 = new Team { Name = "Rockets", Record = "0-0", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Rockets", Score = 0 },
-            Team2 = new Team { Name = "Mavericks", Record = "0-0", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Mavericks", Score = 0 }
+            Team1 = new TeamDto { Id = Guid.NewGuid(), Name = "Rockets", Record = "0-0", Logo = System.Text.Encoding.UTF8.GetBytes("https://api.dicebear.com/7.x/identicon/svg?seed=Rockets") },
+            Team1Score = 0,
+            Team2 = new TeamDto { Id = Guid.NewGuid(), Name = "Mavericks", Record = "0-0", Logo = System.Text.Encoding.UTF8.GetBytes("https://api.dicebear.com/7.x/identicon/svg?seed=Mavericks") },
+            Team2Score = 0
         },
-        new Match {
+        new MatchDto {
+            Id = Guid.NewGuid(),
             GameNumber = 2,
             Venue = "Court B",
             IsLive = true,
             StatusText = "Q4 02:45",
             PeriodDetails = "4th Quarter",
-            Team1 = new Team { Name = "Tigers", Record = "2-1", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Tigers", Score = 88 },
-            Team2 = new Team { Name = "Eagles", Record = "1-2", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Eagles", Score = 82 }
-        },
-        new Match {
-            GameNumber = 3,
-            Venue = "Main Gym",
-            IsLive = false,
-            StatusText = "FINAL",
-            PeriodDetails = "Full Time",
-            Team1 = new Team { Name = "Panthers", Record = "3-0", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Panthers", Score = 95 },
-            Team2 = new Team { Name = "Blaze", Record = "0-3", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Blaze", Score = 91 }
+            Team1 = new TeamDto { Id = Guid.NewGuid(), Name = "Tigers", Record = "2-1", Logo = System.Text.Encoding.UTF8.GetBytes("https://api.dicebear.com/7.x/identicon/svg?seed=Tigers") },
+            Team1Score = 88,
+            Team2 = new TeamDto { Id = Guid.NewGuid(), Name = "Eagles", Record = "1-2", Logo = System.Text.Encoding.UTF8.GetBytes("https://api.dicebear.com/7.x/identicon/svg?seed=Eagles") },
+            Team2Score = 82
         }
     };
 
-    private List<Match> VolleyballMatches = new()
+    private List<MatchDto> VolleyballMatches = new()
     {
-        new Match {
+        new MatchDto {
+            Id = Guid.NewGuid(),
             GameNumber = 1,
             Venue = "Volleyball Court A",
             IsLive = true,
             StatusText = "SET 3",
             PeriodDetails = "Set 3 (21-19)",
-            Team1 = new Team { Name = "Spikers", Record = "1-0", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Spikers", Score = 2 },
-            Team2 = new Team { Name = "Blockers", Record = "0-1", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Blockers", Score = 1 }
-        },
-        new Match {
-            GameNumber = 2,
-            Venue = "Volleyball Court B",
-            IsLive = false,
-            StatusText = "6:30 PM PHT",
-            PeriodDetails = "Upcoming",
-            Team1 = new Team { Name = "Falcons", Record = "0-0", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Falcons", Score = 0 },
-            Team2 = new Team { Name = "Knights", Record = "0-0", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Knights", Score = 0 }
-        },
-        new Match {
-            GameNumber = 3,
-            Venue = "Main Gym",
-            IsLive = false,
-            StatusText = "FINAL",
-            PeriodDetails = "3 - 0 Sets",
-            Team1 = new Team { Name = "Setters", Record = "2-0", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Setters", Score = 3 },
-            Team2 = new Team { Name = "Servers", Record = "0-2", LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Servers", Score = 0 }
+            Team1 = new TeamDto { Id = Guid.NewGuid(), Name = "Spikers", Record = "1-0", Logo = System.Text.Encoding.UTF8.GetBytes("https://api.dicebear.com/7.x/identicon/svg?seed=Spikers") },
+            Team1Score = 2,
+            Team2 = new TeamDto { Id = Guid.NewGuid(), Name = "Blockers", Record = "0-1", Logo = System.Text.Encoding.UTF8.GetBytes("https://api.dicebear.com/7.x/identicon/svg?seed=Blockers") },
+            Team2Score = 1
         }
     };
 
     protected override async Task OnInitializedAsync()
     {
-        AddChatMessage(new ChatMessage { User = "Mark", Message = "Tigers are looking strong in Q4! 🐅", Timestamp = DateTime.Now.AddMinutes(-12), IsUser = false, AvatarUrl = "https://api.dicebear.com/7.x/bottts/svg?seed=Mark" });
-        AddChatMessage(new ChatMessage { User = "Sarah", Message = "Spikers take set 3! What a comeback! 🏐", Timestamp = DateTime.Now.AddMinutes(-5), IsUser = false, AvatarUrl = "https://api.dicebear.com/7.x/bottts/svg?seed=Sarah" });
+        // Add initial chat entries
+        AddChatMessage(new ChatMessageDto { Id = Guid.NewGuid(), Username = "Mark", Message = "Tigers are looking strong in Q4! 🐅", TimeStamp = DateTime.Now.AddMinutes(-12), IsUser = false, AvatarUrl = "https://api.dicebear.com/7.x/bottts/svg?seed=Mark" });
+        AddChatMessage(new ChatMessageDto { Id = Guid.NewGuid(), Username = "Sarah", Message = "Spikers take set 3! What a comeback! 🏐", TimeStamp = DateTime.Now.AddMinutes(-5), IsUser = false, AvatarUrl = "https://api.dicebear.com/7.x/bottts/svg?seed=Sarah" });
 
-        hubConnection = new HubConnectionBuilder()
+        // 💬 1. Chat Hub Connection
+        chatHubConnection = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("/chathub"))
             .WithAutomaticReconnect()
             .Build();
 
-        hubConnection.On<string, string, string, DateTime>("ReceiveChatMessage", (user, message, avatarUrl, timestamp) =>
+        chatHubConnection.On<string, string, string, DateTime>("ReceiveChatMessage", (user, message, avatarUrl, timestamp) =>
         {
             bool isMe = string.Equals(user, CurrentUsername, StringComparison.OrdinalIgnoreCase);
 
-            AddChatMessage(new ChatMessage
+            AddChatMessage(new ChatMessageDto
             {
-                User = user,
+                Id = Guid.NewGuid(),
+                Username = user,
                 Message = message,
                 AvatarUrl = avatarUrl,
-                Timestamp = timestamp,
+                TimeStamp = timestamp,
                 IsUser = isMe
             });
 
             _ = InvokeAsync(StateHasChanged);
         });
 
-        hubConnection.On<int>("UpdateOnlineCount", (count) =>
+        chatHubConnection.On<int>("UpdateOnlineCount", (count) =>
         {
             OnlineFanCount = count;
             _ = InvokeAsync(StateHasChanged);
         });
 
-        await hubConnection.StartAsync();
+        // 🏀 2. Basketball Hub Connection
+        basketballHubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/basketballhub"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        basketballHubConnection.On<TeamDto>("ReceiveTeamUpdated", (updatedTeam) =>
+        {
+            UpdateTeamInMatches(BasketballMatches, updatedTeam);
+            _ = InvokeAsync(StateHasChanged);
+        });
+
+        // 🏐 3. Volleyball Hub Connection
+        volleyballHubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/volleyballhub"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        // ⚡ Listen for full match snapshots from Volleyball console / scoreboard
+        volleyballHubConnection.On<string>("ReceiveMatchState", (matchStateJson) =>
+        {
+            try
+            {
+                var updatedMatch = System.Text.Json.JsonSerializer.Deserialize<MatchDto>(matchStateJson);
+                if (updatedMatch != null)
+                {
+                    var existing = VolleyballMatches.FirstOrDefault(m => m.Id == updatedMatch.Id || m.GameNumber == updatedMatch.GameNumber);
+                    if (existing != null)
+                    {
+                        existing.Team1Score = updatedMatch.Team1Score;
+                        existing.Team2Score = updatedMatch.Team2Score;
+                        existing.IsLive = updatedMatch.IsLive;
+                        existing.StatusText = updatedMatch.StatusText;
+                        existing.PeriodDetails = updatedMatch.PeriodDetails;
+                    }
+                    else
+                    {
+                        VolleyballMatches.Add(updatedMatch);
+                    }
+                    _ = InvokeAsync(StateHasChanged);
+                }
+            }
+            catch
+            {
+                // Ignore invalid JSON payloads gracefully
+            }
+        });
+
+        // Start all hub connections concurrently
+        await Task.WhenAll(
+            chatHubConnection.StartAsync(),
+            basketballHubConnection.StartAsync(),
+            volleyballHubConnection.StartAsync()
+        );
+
+        // Optionally request immediate volleyball state from host/console
+        if (volleyballHubConnection.State == HubConnectionState.Connected)
+        {
+            await volleyballHubConnection.SendAsync("RequestMatchState");
+        }
+    }
+
+    private void UpdateTeamInMatches(List<MatchDto> matches, TeamDto updatedTeam)
+    {
+        foreach (var match in matches)
+        {
+            // Check and update Team 1 if non-null
+            if (match.Team1 != null && (match.Team1.Id == updatedTeam.Id || match.Team1.Name == updatedTeam.Name))
+            {
+                match.Team1.Name = updatedTeam.Name;
+                match.Team1.Logo = updatedTeam.Logo;
+                match.Team1.Record = updatedTeam.Record;
+            }
+
+            // Check and update Team 2 if non-null
+            if (match.Team2 != null && (match.Team2.Id == updatedTeam.Id || match.Team2.Name == updatedTeam.Name))
+            {
+                match.Team2.Name = updatedTeam.Name;
+                match.Team2.Logo = updatedTeam.Logo;
+                match.Team2.Record = updatedTeam.Record;
+            }
+        }
+    }
+
+    // 🖼️ Helper method for logo rendering
+    public static string GetImageSrc(byte[]? imageBytes)
+    {
+        if (imageBytes == null || imageBytes.Length == 0)
+            return "images/default-logo.png";
+
+        string base64 = Convert.ToBase64String(imageBytes);
+        return $"data:image/png;base64,{base64}";
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -389,7 +434,7 @@
         }
     }
 
-    private void AddChatMessage(ChatMessage msg)
+    private void AddChatMessage(ChatMessageDto msg)
     {
         ChatMessages.Add(msg);
 
@@ -433,17 +478,18 @@
 
             var username = string.IsNullOrWhiteSpace(CurrentUsername) ? "Anonymous" : CurrentUsername.Trim();
 
-            if (hubConnection is not null && hubConnection.State == HubConnectionState.Connected)
+            if (chatHubConnection is not null && chatHubConnection.State == HubConnectionState.Connected)
             {
-                await hubConnection.SendAsync("SendChatMessage", username, text, SelectedAvatarUrl, DateTime.Now);
+                await chatHubConnection.SendAsync("SendChatMessage", username, text, SelectedAvatarUrl, DateTime.Now);
             }
             else
             {
-                AddChatMessage(new ChatMessage
+                AddChatMessage(new ChatMessageDto
                 {
-                    User = username,
+                    Id = Guid.NewGuid(),
+                    Username = username,
                     Message = text,
-                    Timestamp = DateTime.Now,
+                    TimeStamp = DateTime.Now,
                     IsUser = true,
                     AvatarUrl = SelectedAvatarUrl
                 });
@@ -471,9 +517,19 @@
 
     public async ValueTask DisposeAsync()
     {
-        if (hubConnection is not null)
+        if (chatHubConnection is not null)
         {
-            await hubConnection.DisposeAsync();
+            await chatHubConnection.DisposeAsync();
+        }
+
+        if (basketballHubConnection is not null)
+        {
+            await basketballHubConnection.DisposeAsync();
+        }
+
+        if (volleyballHubConnection is not null)
+        {
+            await volleyballHubConnection.DisposeAsync();
         }
     }
 }
