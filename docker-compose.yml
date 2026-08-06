@@ -38,11 +38,15 @@ services:
       - ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
       - ConnectionStrings__DefaultConnection=Host=host.docker.internal;Port=5432;Database=pahampangdb;Username=postgres;Password=${DB_PASSWORD}
       - AuthApiBaseUrl=https://casa-authgateway-service.taila207b7.ts.net
-      - Jwt__Key=${JWT_KEY}
+      - Jwt__Key=THIS_IS_A_32_CHAR_MINIMUM_SECRET_KEY!!
       - Jwt__Issuer=https://casa-authgateway-service.taila207b7.ts.net
-      - Jwt__Audience=https://casa-authgateway-service.taila207b7.ts.net      
+      - Jwt__Audience=https://casa-authgateway-service.taila207b7.ts.net
+      # 🔍 Enable verbose logs for Auth & JWT debugging:
+      - Logging__LogLevel__Microsoft.AspNetCore.Authentication=Debug
+      - Logging__LogLevel__Microsoft.AspNetCore.Authorization=Debug
 
-    volumes:
+    volumes:      
+      # 🔑 Fixed: Pointing directly to the default ASP.NET Core key storage path
       - ./pr-keys:/root/.aspnet/DataProtection-Keys
     depends_on:
       - ts-casawasm-app

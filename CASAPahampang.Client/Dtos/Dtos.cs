@@ -10,12 +10,14 @@ public class TeamDto
     
     public string Record { get; set; } = "0-0";
 }
-
 public class MatchDto
 {    
     public Guid Id { get; set; }
     public int GameNumber { get; set; }
     public string Venue { get; set; } = "Main Gym";
+
+    // 🏆 Identifier for the sport/game
+    public string Sport { get; set; } = "Basketball";
 
     // ⚽ Include Team IDs and make nested TeamDtos nullable
     public Guid Team1Id { get; set; }
@@ -30,7 +32,6 @@ public class MatchDto
     public string StatusText { get; set; } = string.Empty;
     public string PeriodDetails { get; set; } = string.Empty;    
 }
-
 public class ChatMessageDto
 {    
     public Guid Id { get; set; }

@@ -1,13 +1,16 @@
 ﻿@page "/teams/register"
-
+@using TestWASM.AuthLib.Services
+@using Microsoft.AspNetCore.Authorization
 @using CASAPahampang.Client.Dtos
 @using Microsoft.AspNetCore.SignalR.Client
 @using static Microsoft.AspNetCore.Components.Web.RenderMode
 @using System.Net.Http.Json
 @implements IAsyncDisposable
-@rendermode InteractiveWebAssembly
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @inject HttpClient Http
-@inject NavigationManager Navigation
+@inject AuthService authService
+@inject NavigationManager Nav
+
 
 <div class="registration-container">
     <header class="page-header">
@@ -175,16 +178,80 @@
     private bool isLoadingList = true;
     private bool isHubConnected => teamHubConnection?.State == HubConnectionState.Connected;
 
+    @* protected override async Task OnInitializedAsync()
+    {
+        if(!AuthService.IsInitialized)
+            await AuthService.InitializeAsync();
+        if(!AuthService.IsLoggedIn || !AuthService.Roles.Contains("Admin"))
+        {
+            Nav.NavigateTo("login");
+            return;
+        }
+        await LoadTeams();
+        await SetupSignalRHub();
+    } *@
+@* 
     protected override async Task OnInitializedAsync()
     {
+        if (!AuthService.IsInitialized)
+            await AuthService.InitializeAsync();
+
+        if (!AuthService.IsLoggedIn || !AuthService.Roles.Contains("Admin"))
+        {
+            Nav.NavigateTo("login");
+            return;
+        }
+
+        // 🔑 FIX: Attach the JWT Bearer Token to HttpClient for all HTTP requests (GET, POST, PUT, DELETE)
+        if (!string.IsNullOrEmpty(AuthService.AccessToken))
+        {
+            Http.DefaultRequestHeaders.Authorization = 
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", AuthService.AccessToken);
+        }
+
+        await LoadTeams();
+        await SetupSignalRHub();
+    } *@
+
+    protected override async Task OnInitializedAsync()
+    {
+        Console.WriteLine("=== [CLIENT DEBUG] OnInitializedAsync Started ===");
+
+        if (!authService.IsInitialized)
+            await authService.InitializeAsync();
+
+        Console.WriteLine($"[CLIENT DEBUG] IsLoggedIn: {authService.IsLoggedIn}");
+        Console.WriteLine($"[CLIENT DEBUG] Roles: {string.Join(", ", authService.Roles)}");
+        Console.WriteLine($"[CLIENT DEBUG] Token Length: {authService.AccessToken?.Length ?? 0}");
+
+        if (!authService.IsLoggedIn || !authService.Roles.Contains("Admin"))
+        {
+            Console.WriteLine("[CLIENT DEBUG] Access Denied -> Redirecting to /login");
+            Nav.NavigateTo("login");
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(authService.AccessToken))
+        {
+            Http.DefaultRequestHeaders.Authorization = 
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authService.AccessToken);
+                
+            Console.WriteLine($"[CLIENT DEBUG] Attached Bearer Token to HttpClient Headers.");
+        }
+        else
+        {
+            Console.WriteLine("[CLIENT DEBUG] WARNING: AccessToken is null or empty!");
+        }
+
         await LoadTeams();
         await SetupSignalRHub();
     }
-
     private async Task SetupSignalRHub()
     {
         teamHubConnection = new HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri("/teamhub"))
+            .WithUrl(Nav.ToAbsoluteUri("/teamhub") ,options =>{
+                options.AccessTokenProvider = () => Task.FromResult(authService.AccessToken);
+            })
             .WithAutomaticReconnect()
             .Build();
 
@@ -433,7 +500,7 @@
 
     private void GoToDashboard()
     {
-        Navigation.NavigateTo("/dashboard");
+        Nav.NavigateTo("/dashboard");
     }
 
     public async ValueTask DisposeAsync()

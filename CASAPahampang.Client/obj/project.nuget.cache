@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "7jX4Dp2rwCk=",
+  "dgSpecHash": "F+P9Zo2k30o=",
   "success": true,
   "projectFilePath": "/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/CASAPahampang.Client.csproj",
   "expectedPackageFiles": [
@@ -51,7 +51,7 @@
     "/home/alterego/.nuget/packages/microsoft.net.illink.tasks/10.0.10/microsoft.net.illink.tasks.10.0.10.nupkg.sha512",
     "/home/alterego/.nuget/packages/microsoft.net.sdk.webassembly.pack/10.0.10/microsoft.net.sdk.webassembly.pack.10.0.10.nupkg.sha512",
     "/home/alterego/.nuget/packages/system.identitymodel.tokens.jwt/8.21.0/system.identitymodel.tokens.jwt.8.21.0.nupkg.sha512",
-    "/home/alterego/.nuget/packages/testwasm.authlib/1.0.1/testwasm.authlib.1.0.1.nupkg.sha512",
+    "/home/alterego/.nuget/packages/testwasm.authlib/1.0.6/testwasm.authlib.1.0.6.nupkg.sha512",
     "/home/alterego/.nuget/packages/microsoft.netcore.app.runtime.mono.browser-wasm/10.0.10/microsoft.netcore.app.runtime.mono.browser-wasm.10.0.10.nupkg.sha512"
   ],
   "logs": []

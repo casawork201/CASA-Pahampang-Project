@@ -6,12 +6,16 @@ using CASAPahampang.Models;
 using CASAPahampang.Hubs;
 using CASAPahampang.Client.Dtos;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using TestWASM.AuthLib.Services;
 
 namespace CASAPahampang.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[AllowAnonymous]
+[Authorize]
+// [Authorize(Policy = "is-admin")]
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "is-admin")]
 public class TeamController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -21,8 +25,32 @@ public class TeamController : ControllerBase
     {
         _context = context;
         _teamHubContext = teamHubContext;
+        Console.WriteLine("This was called");
     }
 
+    [HttpGet("debug-auth")]
+    [AllowAnonymous] // 👈 Crucial so it executes even if unauthorized
+    public IActionResult DebugAuth()
+    {
+        var authHeader = Request.Headers["Authorization"].ToString();
+        var user = HttpContext.User;
+
+        var claims = user.Claims.Select(c => new { c.Type, c.Value }).ToList();
+
+        return Ok(new
+        {
+            Timestamp = DateTime.UtcNow,
+            HasAuthHeader = !string.IsNullOrEmpty(authHeader),
+            RawAuthHeaderPreview = string.IsNullOrEmpty(authHeader) 
+                ? "NONE" 
+                : (authHeader.Length > 25 ? authHeader[..25] + "..." : authHeader),
+            IsAuthenticated = user.Identity?.IsAuthenticated ?? false,
+            AuthenticationType = user.Identity?.AuthenticationType ?? "None",
+            UserName = user.Identity?.Name ?? "Anonymous",
+            ClaimsCount = claims.Count,
+            Claims = claims
+        });
+    }
     // ---------------------------------------------------------
     // 1. READ ALL: GET api/team
     // ---------------------------------------------------------
@@ -30,7 +58,7 @@ public class TeamController : ControllerBase
     public async Task<ActionResult<IEnumerable<TeamDto>>> GetAllTeams()
     {
         try
-        {
+        {            
             var teams = await _context.Teams
                 .AsNoTracking()
                 .Select(t => new TeamDto

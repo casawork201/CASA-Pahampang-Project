@@ -1,4 +1,7 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿
+@using TestWASM.AuthLib.Components
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">CASAPahampang</a>
     </div>
@@ -25,11 +28,10 @@
                 <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
             </NavLink>
         </div>
+
+
+        <div class="nav-item px-3">
+            <LoginDisplay />
+        </div>
     </nav>
-</div>
-
-@using TestWASM.AuthLib.Components
-
-<div class="nav-item px-3">
-    <LoginDisplay />
 </div>

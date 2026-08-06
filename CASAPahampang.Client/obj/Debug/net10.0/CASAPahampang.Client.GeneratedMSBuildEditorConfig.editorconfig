@@ -32,12 +32,12 @@ build_property.EnableCodeStyleSeverity =
 build_metadata.AdditionalFiles.TargetPath = TGF5b3V0L0F1dGhJbml0aWFsaXplci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/Counter.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQ291bnRlci5yYXpvcg==
-build_metadata.AdditionalFiles.CssScope = 
-
 [/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/Login.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTG9naW4ucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/MatchRegister.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTWF0Y2hSZWdpc3Rlci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/_Imports.razor]

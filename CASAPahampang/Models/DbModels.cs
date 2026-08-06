@@ -17,7 +17,6 @@ public class Team
     
     public string Record { get; set; } = "0-0";
 }
-
 [Table("Match")]
 public class Match
 {
@@ -26,6 +25,9 @@ public class Match
     
     public int GameNumber { get; set; }
     public string Venue { get; set; } = "Main Gym";
+
+    // 🏆 Identifier for the sport/game (e.g., "Basketball", "Volleyball", "Badminton")
+    public string Sport { get; set; } = "Basketball";
 
     // ⚽ Explicit Foreign Key & Navigation for Team 1
     public Guid Team1Id { get; set; }

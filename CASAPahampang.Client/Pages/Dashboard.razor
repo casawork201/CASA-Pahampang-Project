@@ -1,5 +1,6 @@
 ﻿@page "/dashboard"
-
+@using System.Net.Http.Json
+@inject HttpClient Http
 @using Microsoft.AspNetCore.SignalR.Client
 @using static Microsoft.AspNetCore.Components.Web.RenderMode
 @using CASAPahampang.Client.Dtos
@@ -52,7 +53,7 @@
                                 <div class="team-cell team-left">
                                     <div class="team-text">
                                         <span class="team-name">@(match.Team1?.Name ?? "TBD")</span>
-                                        <span class="team-record">@(match.Team1?.Record ?? "0-0")</span>
+                                        <span class="team-record">@(match.Team1?.Record ?? "0")</span>
                                     </div>
                                     <img src="@GetImageSrc(match.Team1?.Logo)" alt="@(match.Team1?.Name ?? "Team") Logo" class="team-logo" />
                                 </div>
@@ -78,7 +79,7 @@
                                     <img src="@GetImageSrc(match.Team2?.Logo)" alt="@(match.Team2?.Name ?? "Team") Logo" class="team-logo" />
                                     <div class="team-text">
                                         <span class="team-name">@(match.Team2?.Name ?? "TBD")</span>
-                                        <span class="team-record">@(match.Team2?.Record ?? "0-0")</span>
+                                        <span class="team-record">@(match.Team2?.Record ?? "0")</span>
                                     </div>
                                 </div>
                             </div>
@@ -222,7 +223,6 @@
         </div>
     </div>
 </div>
-
 @code {
     private HubConnection? chatHubConnection;
     private HubConnection? basketballHubConnection;
@@ -252,55 +252,32 @@
 
     private List<ChatMessageDto> ChatMessages = new();
 
-    private List<MatchDto> BasketballMatches = new()
-    {
-        new MatchDto {
-            Id = Guid.NewGuid(),
-            GameNumber = 1,
-            Venue = "Main Gym",
-            IsLive = false,
-            StatusText = "8:00 PM PHT",
-            PeriodDetails = "Neutral Site",
-            Team1 = new TeamDto { Id = Guid.NewGuid(), Name = "Rockets", Record = "0-0", Logo = System.Text.Encoding.UTF8.GetBytes("https://api.dicebear.com/7.x/identicon/svg?seed=Rockets") },
-            Team1Score = 0,
-            Team2 = new TeamDto { Id = Guid.NewGuid(), Name = "Mavericks", Record = "0-0", Logo = System.Text.Encoding.UTF8.GetBytes("https://api.dicebear.com/7.x/identicon/svg?seed=Mavericks") },
-            Team2Score = 0
-        },
-        new MatchDto {
-            Id = Guid.NewGuid(),
-            GameNumber = 2,
-            Venue = "Court B",
-            IsLive = true,
-            StatusText = "Q4 02:45",
-            PeriodDetails = "4th Quarter",
-            Team1 = new TeamDto { Id = Guid.NewGuid(), Name = "Tigers", Record = "2-1", Logo = System.Text.Encoding.UTF8.GetBytes("https://api.dicebear.com/7.x/identicon/svg?seed=Tigers") },
-            Team1Score = 88,
-            Team2 = new TeamDto { Id = Guid.NewGuid(), Name = "Eagles", Record = "1-2", Logo = System.Text.Encoding.UTF8.GetBytes("https://api.dicebear.com/7.x/identicon/svg?seed=Eagles") },
-            Team2Score = 82
-        }
-    };
-
-    private List<MatchDto> VolleyballMatches = new()
-    {
-        new MatchDto {
-            Id = Guid.NewGuid(),
-            GameNumber = 1,
-            Venue = "Volleyball Court A",
-            IsLive = true,
-            StatusText = "SET 3",
-            PeriodDetails = "Set 3 (21-19)",
-            Team1 = new TeamDto { Id = Guid.NewGuid(), Name = "Spikers", Record = "1-0", Logo = System.Text.Encoding.UTF8.GetBytes("https://api.dicebear.com/7.x/identicon/svg?seed=Spikers") },
-            Team1Score = 2,
-            Team2 = new TeamDto { Id = Guid.NewGuid(), Name = "Blockers", Record = "0-1", Logo = System.Text.Encoding.UTF8.GetBytes("https://api.dicebear.com/7.x/identicon/svg?seed=Blockers") },
-            Team2Score = 1
-        }
-    };
+    private List<MatchDto> BasketballMatches = new();
+    private List<MatchDto> VolleyballMatches = new();
 
     protected override async Task OnInitializedAsync()
     {
+        // Load match data from database API endpoints
+        try
+        {
+            var allMatches = await Http.GetFromJsonAsync<List<MatchDto>>(Navigation.ToAbsoluteUri("api/matches")) ?? new();
+            BasketballMatches = allMatches
+                .Where(m => string.Equals(m.Sport, "Basketball", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            // 🏐 Filter volleyball matches
+            VolleyballMatches = allMatches
+                .Where(m => string.Equals(m.Sport, "Volleyball", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading matches from database: {ex.Message}");
+        }
+
         // Add initial chat entries
-        AddChatMessage(new ChatMessageDto { Id = Guid.NewGuid(), Username = "Mark", Message = "Tigers are looking strong in Q4! 🐅", TimeStamp = DateTime.Now.AddMinutes(-12), IsUser = false, AvatarUrl = "https://api.dicebear.com/7.x/bottts/svg?seed=Mark" });
-        AddChatMessage(new ChatMessageDto { Id = Guid.NewGuid(), Username = "Sarah", Message = "Spikers take set 3! What a comeback! 🏐", TimeStamp = DateTime.Now.AddMinutes(-5), IsUser = false, AvatarUrl = "https://api.dicebear.com/7.x/bottts/svg?seed=Sarah" });
+        //AddChatMessage(new ChatMessageDto { Id = Guid.NewGuid(), Username = "Mark", Message = "Tigers are looking strong in Q4! 🐅", TimeStamp = DateTime.Now.AddMinutes(-12), IsUser = false, AvatarUrl = "https://api.dicebear.com/7.x/bottts/svg?seed=Mark" });
+        //AddChatMessage(new ChatMessageDto { Id = Guid.NewGuid(), Username = "Sarah", Message = "Spikers take set 3! What a comeback! 🏐", TimeStamp = DateTime.Now.AddMinutes(-5), IsUser = false, AvatarUrl = "https://api.dicebear.com/7.x/bottts/svg?seed=Sarah" });
 
         // 💬 1. Chat Hub Connection
         chatHubConnection = new HubConnectionBuilder()
@@ -416,12 +393,22 @@
     }
 
     // 🖼️ Helper method for logo rendering
-    public static string GetImageSrc(byte[]? imageBytes)
+    private string GetImageSrc(byte[]? imageBytes)
     {
         if (imageBytes == null || imageBytes.Length == 0)
             return "images/default-logo.png";
 
         string base64 = Convert.ToBase64String(imageBytes);
+
+        // 🔍 Read the first ~100 bytes to check for <svg tag anywhere near the header
+        int headerLength = Math.Min(imageBytes.Length, 100);
+        string headerText = System.Text.Encoding.UTF8.GetString(imageBytes, 0, headerLength);
+
+        if (headerText.Contains("<svg", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"data:image/svg+xml;base64,{base64}";
+        }
+
         return $"data:image/png;base64,{base64}";
     }
 
@@ -532,4 +519,5 @@
             await volleyballHubConnection.DisposeAsync();
         }
     }
+    
 }
