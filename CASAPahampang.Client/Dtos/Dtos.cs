@@ -8,7 +8,7 @@ public class TeamDto
     // 🎨 Nullable byte array fixes the CS8601 build warnings in TeamController
     public byte[]? Logo { get; set; } 
     
-    public string Record { get; set; } = "0-0";
+    public string Record { get; set; } = "0";
 }
 public class MatchDto
 {    

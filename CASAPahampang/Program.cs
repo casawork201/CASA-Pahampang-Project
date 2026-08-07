@@ -142,8 +142,9 @@ app.MapRazorComponents<App>()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(CASAPahampang.Client._Imports).Assembly);
 app.MapHub<BingoHub>("/bingohub");
-app.MapHub<VolleyballHub>("/volleyballhub");
-app.MapHub<BasketballHub>("/basketballhub");
+// app.MapHub<VolleyballHub>("/volleyballhub");
+// app.MapHub<BasketballHub>("/basketballhub");
+app.MapHub<SportsHub>("/sportshub");
 app.MapHub<ChatHub>("/chathub");
 app.MapHub<TeamHub>("/teamhub");
 app.MapHub<MatchHub>("/matchhub");

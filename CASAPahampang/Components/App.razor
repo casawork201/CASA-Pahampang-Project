@@ -17,6 +17,9 @@
 
 <body>
     <Routes />
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
     <script src="@Assets["_framework/blazor.web.js"]"></script>
     <script>
         window.PostToSignIn = async function(payload){
@@ -139,53 +142,6 @@
                 };
             }
         };
-    </script>
-    <script>
-        window.PostToSignIn = async function(payload){
-            console.log("[ERP_Processor] initializing secure handshake...");
-            try{
-                document.body.style.cursor = "wait";
-
-                const getAntiforgeryToken = () => {
-                    const tokenElement = document.getElementById("antiforgery-token");
-                    return tokenElement ? tokenElement.value : "";
-                };
-
-                const token = getAntiforgeryToken();
-                
-                if (!token) {
-                    throw new Error("Antiforgery token not found in DOM.");
-                }
-
-                const form = document.createElement("form");
-                form.method = "POST";
-                form.action = "/blazor/signin";
-
-                for(const key in payload){
-                    if(payload.hasOwnProperty(key)){
-                        const input = document.createElement("input");
-                        input.type = "hidden";
-                        input.name = key;
-                        input.value = payload[key];
-                        form.appendChild(input);
-                    }
-                }
-
-                const antiInput = document.createElement("input");
-                antiInput.type = "hidden";
-                antiInput.name = "__RequestVerificationToken";
-                antiInput.value = token;
-                form.appendChild(antiInput);
-
-                document.body.appendChild(form);
-                form.submit();
-            }
-            catch(err){
-                console.error("Handshake Failure:", err);
-                document.body.style.cursor = "default";
-                alert("Comm-link failed: " + err.message);
-            }
-        }
     </script>
 </body>
 

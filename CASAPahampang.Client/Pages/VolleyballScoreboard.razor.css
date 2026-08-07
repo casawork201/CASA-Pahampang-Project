@@ -7,6 +7,7 @@
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
+        box-sizing: border-box;
     }
 
     .scoreboard-header {
@@ -41,10 +42,20 @@
     .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #16a34a; box-shadow: 0 0 8px #22c55e; }
 
     .arena-board {
-        display: grid;
-        grid-template-columns: 1fr 260px 1fr;
+        display: flex;
+        flex-direction: column;
         gap: 1.5rem;
-        align-items: center;
+        align-items: stretch;
+    }
+
+    @media (min-width: 992px) {
+        .arena-board {
+            flex-direction: row;
+        }
+        .center-clock-panel {
+            flex: 0 0 300px !important;
+            width: 300px !important;
+        }
     }
 
     .team-card {
@@ -58,16 +69,15 @@
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
 
-    .team-card.serving-border {
+    .team-card.is-serving {
         border-color: #0284c7;
     }
 
     .team-meta { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
-    .team-logo { width: 64px; height: 64px; }
+    .team-logo { width: 64px; height: 64px; object-fit: contain; }
     .team-name { margin: 0; font-size: 1.8rem; font-weight: 900; text-transform: uppercase; text-align: center; }
 
-    .serving-indicator { min-height: 24px; }
-    .serve-pill { background: #0284c7; color: #ffffff; font-size: 0.75rem; font-weight: 800; padding: 0.25rem 0.75rem; border-radius: 12px; }
+    .serving-pill { background: #0284c7; color: #ffffff; font-size: 0.75rem; font-weight: 800; padding: 0.25rem 0.75rem; border-radius: 12px; }
 
     .led-score-box {
         background: #0f172a;
@@ -81,13 +91,13 @@
 
     .led-score {
         font-family: 'Courier New', Courier, monospace;
-        font-size: 6rem;
+        font-size: 5rem;
         font-weight: 900;
         color: #facc15;
         text-shadow: 0 0 10px rgba(250, 204, 21, 0.5);
     }
 
-    .sets-won-row {
+    .sets-won-tag {
         background: #f1f5f9;
         border: 1px solid #cbd5e1;
         border-radius: 10px;
@@ -98,37 +108,56 @@
         font-size: 0.8rem;
         font-weight: 800;
         color: #64748b;
+        margin-bottom: 1rem;
     }
 
-    .sets-count { font-size: 1.2rem; color: #0f172a; }
+    .stats-row {
+        display: flex;
+        gap: 0.75rem;
+        width: 100%;
+        justify-content: space-around;
+    }
+
+    .stat-pill {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        text-align: center;
+        flex: 1;
+    }
+    .stat-pill .lbl { display: block; font-size: 0.65rem; color: #64748b; font-weight: 700; }
+    .stat-pill .val { display: block; font-size: 1rem; color: #0f172a; font-weight: 900; }
 
     /* Center Panel */
-    .center-panel { display: flex; flex-direction: column; gap: 1rem; align-items: center; }
-
-    .current-set-badge {
-        background: #0284c7; color: #ffffff; font-weight: 900;
-        padding: 0.6rem 1.5rem; border-radius: 20px; font-size: 1.2rem; letter-spacing: 1px;
-    }
-
-    .set-summary-card {
+    .center-clock-panel { 
+        display: flex; 
+        flex-direction: column; 
+        gap: 0.5rem; 
+        align-items: center; 
         background: #ffffff;
         border: 1px solid #e2e8f0;
-        border-radius: 14px;
-        padding: 1rem;
-        width: 100%;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
 
-    .set-summary-card h3 { margin: 0 0 0.75rem 0; font-size: 0.8rem; font-weight: 800; color: #64748b; text-align: center; }
-    .set-scores-list { display: flex; flex-direction: column; gap: 0.5rem; }
-
-    .set-row { display: flex; justify-content: space-between; padding: 0.4rem 0.75rem; background: #f8fafc; border-radius: 6px; font-size: 0.85rem; font-weight: 700; }
-    .active-set { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .period-badge {
+        background: #0284c7; color: #ffffff; font-weight: 900;
+        padding: 0.6rem 1.5rem; border-radius: 20px; font-size: 1.2rem; letter-spacing: 1px;
+        text-align: center;
+        width: 100%;
+    }
 
     /* Ticker */
     .ticker-section { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1rem; }
     .ticker-header { font-size: 0.85rem; font-weight: 800; color: #0284c7; margin-bottom: 0.75rem; }
     .ticker-list { display: flex; flex-direction: column; gap: 0.5rem; }
     .ticker-item { display: flex; gap: 1rem; background: #f8fafc; padding: 0.6rem 1rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; align-items: center; }
-    .evt-time { color: #0284c7; font-weight: 800; font-size: 0.75rem; min-width: 60px; }
+    .ticker-item.empty { color: #94a3b8; justify-content: center; }
     .evt-text { font-weight: 600; color: #334155; }
+
+    @media (max-width: 576px) {
+        .led-score { font-size: 4rem; }
+        .tournament-title h1 { font-size: 1.1rem; }
+    }

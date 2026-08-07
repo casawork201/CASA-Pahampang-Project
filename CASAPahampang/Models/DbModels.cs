@@ -15,7 +15,7 @@ public class Team
     // 🎨 Nullable byte array for PostgreSQL bytea mapping
     public byte[]? Logo { get; set; } 
     
-    public string Record { get; set; } = "0-0";
+    public string Record { get; set; } = "0";
 }
 [Table("Match")]
 public class Match

@@ -3,42 +3,68 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @using static Microsoft.AspNetCore.Components.Web.RenderMode
 @using System.Text.Json
+@using CASAPahampang.Client.Dtos
 @implements IAsyncDisposable
 @rendermode InteractiveWebAssembly
 @inject NavigationManager Navigation
+@inject HttpClient Http
 
-<div class="fan-scoreboard-container">
-    <header class="scoreboard-header">
-        <button class="btn-back" @onclick="GoBack" type="button">
+<div class="fan-scoreboard-container w-100 container-fluid px-2 px-md-3 py-3" style="max-width: 100% !important;">
+    <header class="scoreboard-header d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3">
+        <button class="btn-back align-self-start align-self-md-center" @onclick="GoBack" type="button">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
             Dashboard
         </button>
 
-        <div class="tournament-title">
+        <div class="tournament-title text-center my-2 my-md-0">
             <p class="branding-sub">CENTRAL AZUCARERA DE SAN ANTONIO</p>
-            <h1>CASA PAHAMPANG BASKETBALL ⚡</h1>
+            <h1>CASA PAHAMPANG BASKETBALL ⚡🏀</h1>
             <p class="venue-tag">📍 Main Gymnasium • Court 1</p>
         </div>
 
-        <div class="live-status-badge @(IsLive ? "is-live" : "is-paused")">
+        <div class="live-status-badge @(IsLive ? "is-live" : "is-paused") align-self-start align-self-md-center">
             <span class="status-dot"></span>
-            @(IsLive ? "LIVE" : "PAUSED")
+            @(IsLive ? "LIVE 🔴" : "STANDBY ⏳")
         </div>
     </header>
 
-    <div class="arena-board">
+    @if (IsConnecting)
+    {
+        <div class="standby-overlay text-center p-5 w-100">
+            <div class="spinner-border text-warning" role="status"></div>
+            <p class="mt-3 fs-4 text-white">Connecting to sports broadcast... 📡✨</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="standby-banner text-center my-3 p-4 rounded bg-dark text-danger border border-danger w-100">
+            ❌ <strong>Connection Error:</strong> @ErrorMessage
+            <div class="mt-3">
+                <button class="btn btn-warning fw-bold" @onclick="InitializeConnection">
+                    🔄 Retry Connection
+                </button>
+            </div>
+        </div>
+    }
+    else if (!IsLive)
+    {
+        <div class="standby-banner text-center my-3 p-3 rounded bg-dark text-warning border border-warning w-100">
+            ⏳ <strong>GAME STANDBY:</strong> Waiting for scorekeeper to start the clock.
+        </div>
+    }
+
+    <div class="arena-board @(!IsLive ? "dimmed-board" : "") w-100">
         <div class="team-card team-home">
             <div class="team-meta">
-                <img src="@Team1LogoUrl" alt="@Team1Name Logo" class="team-logo" />
-                <h2 class="team-name">@Team1Name</h2>
+                @if (!string.IsNullOrWhiteSpace(Team1LogoUrl))
+                {
+                    <img src="@Team1LogoUrl" alt="@Team1Name Logo" class="team-logo" />
+                }
+                <h2 class="team-name">@(string.IsNullOrWhiteSpace(Team1Name) ? "HOME" : Team1Name)</h2>
                 <div class="team-indicators">
                     @if (Team1Possession)
                     {
                         <span class="possession-pill">POSS ◄</span>
-                    }
-                    @if (Team1Fouls >= 5)
-                    {
-                        <span class="bonus-pill">BONUS</span>
                     }
                 </div>
             </div>
@@ -49,11 +75,7 @@
 
             <div class="stats-row">
                 <div class="stat-pill">
-                    <span class="lbl">FOULS</span>
-                    <span class="val">@Team1Fouls</span>
-                </div>
-                <div class="stat-pill">
-                    <span class="lbl">TIMEOUTS</span>
+                    <span class="lbl">TIMEOUTS ⏱️</span>
                     <span class="val">@Team1Timeouts</span>
                 </div>
             </div>
@@ -61,18 +83,18 @@
 
         <div class="center-clock-panel">
             <div class="period-badge">
-                <span>@PeriodText</span>
+                <span>@(string.IsNullOrWhiteSpace(PeriodText) ? "1ST QUARTER" : PeriodText) 📊</span>
             </div>
 
             <div class="game-clock-card">
-                <span class="clock-label">GAME CLOCK</span>
+                <span class="clock-label">GAME CLOCK ⏱️</span>
                 <div class="led-digital-clock @(IsLive ? "running" : "stopped")">
                     @FormatTime(GameClockSeconds)
                 </div>
             </div>
 
             <div class="shot-clock-card @(ShotClockSeconds <= 5 && ShotClockSeconds > 0 ? "critical" : "")">
-                <span class="clock-label">SHOT CLOCK</span>
+                <span class="clock-label">SHOT CLOCK ⏱️</span>
                 <div class="led-shot-clock">
                     @ShotClockSeconds
                 </div>
@@ -81,16 +103,15 @@
 
         <div class="team-card team-away">
             <div class="team-meta">
-                <img src="@Team2LogoUrl" alt="@Team2Name Logo" class="team-logo" />
-                <h2 class="team-name">@Team2Name</h2>
+                @if (!string.IsNullOrWhiteSpace(Team2LogoUrl))
+                {
+                    <img src="@Team2LogoUrl" alt="@Team2Name Logo" class="team-logo" />
+                }
+                <h2 class="team-name">@(string.IsNullOrWhiteSpace(Team2Name) ? "AWAY" : Team2Name)</h2>
                 <div class="team-indicators">
                     @if (Team2Possession)
                     {
                         <span class="possession-pill">► POSS</span>
-                    }
-                    @if (Team2Fouls >= 5)
-                    {
-                        <span class="bonus-pill">BONUS</span>
                     }
                 </div>
             </div>
@@ -101,30 +122,26 @@
 
             <div class="stats-row">
                 <div class="stat-pill">
-                    <span class="lbl">FOULS</span>
-                    <span class="val">@Team2Fouls</span>
-                </div>
-                <div class="stat-pill">
-                    <span class="lbl">TIMEOUTS</span>
+                    <span class="lbl">TIMEOUTS ⏱️</span>
                     <span class="val">@Team2Timeouts</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="ticker-section">
+    <div class="ticker-section w-100 mt-2">
         <div class="ticker-header">
             <span>🔥 RECENT PLAYS</span>
         </div>
         <div class="ticker-content">
             @if (RecentEvents.Count == 0)
             {
-                <div class="ticker-item empty">Waiting for game actions...</div>
+                <div class="ticker-item empty">Waiting for game actions... 📭</div>
             }
             else
             {
                 <div class="ticker-list">
-                    @foreach (var evt in RecentEvents.Take(4))
+                    @foreach (var evt in RecentEvents.Take(5))
                     {
                         <div class="ticker-item">
                             <span class="evt-time">Q@Period @FormatTime(evt.GameClock)</span>
@@ -137,6 +154,7 @@
     </div>
 </div>
 
+
 @code {
     public class PlayEvent
     {
@@ -146,17 +164,16 @@
 
     public class BasketballStatePayload
     {
+        public string Sport { get; set; } = string.Empty;
         public string Team1Name { get; set; } = string.Empty;
         public string Team1LogoUrl { get; set; } = string.Empty;
         public int Team1Score { get; set; }
-        public int Team1Fouls { get; set; }
         public int Team1Timeouts { get; set; }
         public bool Team1Possession { get; set; }
 
         public string Team2Name { get; set; } = string.Empty;
         public string Team2LogoUrl { get; set; } = string.Empty;
         public int Team2Score { get; set; }
-        public int Team2Fouls { get; set; }
         public int Team2Timeouts { get; set; }
         public bool Team2Possession { get; set; }
 
@@ -165,24 +182,25 @@
         public int GameClockSeconds { get; set; }
         public int ShotClockSeconds { get; set; }
         public bool IsLive { get; set; }
+        public string StatusText { get; set; } = string.Empty;
         public List<PlayEvent> RecentEvents { get; set; } = new();
     }
 
     private HubConnection? hubConnection;
 
+    private bool IsConnecting = true;
+    private string ErrorMessage = string.Empty;
     private bool IsLive = false;
 
-    private string Team1Name = "Tigers";
-    private string Team1LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Tigers";
+    private string Team1Name = string.Empty;
+    private string Team1LogoUrl = string.Empty;
     private int Team1Score = 0;
-    private int Team1Fouls = 0;
     private int Team1Timeouts = 0;
     private bool Team1Possession = false;
 
-    private string Team2Name = "Eagles";
-    private string Team2LogoUrl = "https://api.dicebear.com/7.x/identicon/svg?seed=Eagles";
+    private string Team2Name = string.Empty;
+    private string Team2LogoUrl = string.Empty;
     private int Team2Score = 0;
-    private int Team2Fouls = 0;
     private int Team2Timeouts = 0;
     private bool Team2Possession = false;
 
@@ -194,47 +212,136 @@
 
     private List<PlayEvent> RecentEvents = new();
 
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     protected override async Task OnInitializedAsync()
     {
-        hubConnection = new HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri("/basketballhub"))
-            .WithAutomaticReconnect()
-            .Build();
+        await InitializeConnection();
+    }
 
-        hubConnection.On<string>("ReceiveBasketballState", (json) =>
+    private async Task InitializeConnection()
+    {
+        IsConnecting = true;
+        ErrorMessage = string.Empty;
+
+        // 1. Unang kuhanin sa DB para may laman agad ang UI kahit walang live stream
+        await LoadStateFromDatabaseAsync();
+
+        // 2. Kumonekta sa SignalR /sportshub
+        await ConnectToHubAsync();
+    }
+
+    private async Task LoadStateFromDatabaseAsync()
+    {
+        try
         {
-            var data = JsonSerializer.Deserialize<BasketballStatePayload>(json);
-            if (data is not null)
+            var allMatches = await Http.GetFromJsonAsync<List<MatchDto>>(Navigation.ToAbsoluteUri("api/matches")) ?? new();
+            var activeMatch = allMatches.FirstOrDefault(m => string.Equals(m.Sport, "Basketball", StringComparison.OrdinalIgnoreCase) && m.IsLive)
+                           ?? allMatches.FirstOrDefault(m => string.Equals(m.Sport, "Basketball", StringComparison.OrdinalIgnoreCase) && !string.Equals(m.StatusText, "Concluded", StringComparison.OrdinalIgnoreCase));
+
+            if (activeMatch != null)
             {
-                Team1Name = data.Team1Name;
-                Team1LogoUrl = data.Team1LogoUrl;
-                Team1Score = data.Team1Score;
-                Team1Fouls = data.Team1Fouls;
-                Team1Timeouts = data.Team1Timeouts;
-                Team1Possession = data.Team1Possession;
+                Team1Name = activeMatch.Team1?.Name ?? "TBD";
+                Team1LogoUrl = GetImageSrc(activeMatch.Team1?.Logo);
+                Team1Score = activeMatch.Team1Score;
 
-                Team2Name = data.Team2Name;
-                Team2LogoUrl = data.Team2LogoUrl;
-                Team2Score = data.Team2Score;
-                Team2Fouls = data.Team2Fouls;
-                Team2Timeouts = data.Team2Timeouts;
-                Team2Possession = data.Team2Possession;
+                Team2Name = activeMatch.Team2?.Name ?? "TBD";
+                Team2LogoUrl = GetImageSrc(activeMatch.Team2?.Logo);
+                Team2Score = activeMatch.Team2Score;
 
-                Period = data.Period;
-                PeriodText = data.PeriodText;
-                GameClockSeconds = data.GameClockSeconds;
-                ShotClockSeconds = data.ShotClockSeconds;
-                IsLive = data.IsLive;
-                RecentEvents = data.RecentEvents ?? new();
-
-                InvokeAsync(StateHasChanged);
+                IsLive = activeMatch.IsLive;
+                PeriodText = string.IsNullOrWhiteSpace(activeMatch.PeriodDetails) ? "1ST QUARTER" : activeMatch.PeriodDetails;
             }
-        });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"DB Initial Load Warning: {ex.Message}");
+        }
+        finally
+        {
+            IsConnecting = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
 
-        await hubConnection.StartAsync();
+    private async Task ConnectToHubAsync()
+    {
+        try
+        {
+            if (hubConnection is not null)
+            {
+                await hubConnection.DisposeAsync();
+            }
 
-        // Request initial state snapshot from active scorekeeper console ⚡
-        await hubConnection.SendAsync("RequestBasketballState");
+            hubConnection = new HubConnectionBuilder()
+                .WithUrl(Navigation.ToAbsoluteUri("/sportshub"))
+                .WithAutomaticReconnect()
+                .Build();
+
+            // 🎯 Match handlers exact sa pinu-broadcast ng backend at scorekeeper
+            Action<string> handleStateJson = (json) =>
+            {
+                try
+                {
+                    var data = JsonSerializer.Deserialize<BasketballStatePayload>(json, JsonOptions);
+                    if (data is not null && (string.IsNullOrEmpty(data.Sport) || string.Equals(data.Sport, "Basketball", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        IsConnecting = false;
+                        IsLive = data.IsLive;
+
+                        Team1Name = data.Team1Name;
+                        Team1LogoUrl = data.Team1LogoUrl;
+                        Team1Score = data.Team1Score;
+                        Team1Timeouts = data.Team1Timeouts;
+                        Team1Possession = data.Team1Possession;
+
+                        Team2Name = data.Team2Name;
+                        Team2LogoUrl = data.Team2LogoUrl;
+                        Team2Score = data.Team2Score;
+                        Team2Timeouts = data.Team2Timeouts;
+                        Team2Possession = data.Team2Possession;
+
+                        Period = data.Period;
+                        PeriodText = data.PeriodText;
+                        GameClockSeconds = data.GameClockSeconds;
+                        ShotClockSeconds = data.ShotClockSeconds;
+                        RecentEvents = data.RecentEvents ?? new();
+
+                        InvokeAsync(StateHasChanged);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error parsing MatchState payload: {ex.Message}");
+                }
+            };
+
+            // Support broad SignalR broadcast methods
+            hubConnection.On<string>("SendMatchState", handleStateJson);
+            hubConnection.On<string>("ReceiveMatchState", handleStateJson);
+            hubConnection.On<string>("ReceiveBasketballState", handleStateJson);
+
+            await hubConnection.StartAsync();
+
+            if (hubConnection.State == HubConnectionState.Connected)
+            {
+                IsConnecting = false;
+                // 📡 Align exact method name sa Scorekeeper (`RequestStateFromHost`, "Basketball")
+                await hubConnection.SendAsync("RequestStateFromHost", "Basketball");
+            }
+        }
+        catch (Exception ex)
+        {
+            IsConnecting = false;
+            Console.WriteLine($"SignalR Connection Exception: {ex.Message}");
+        }
+        finally
+        {
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private string FormatTime(int totalSeconds)
@@ -242,6 +349,23 @@
         int minutes = totalSeconds / 60;
         int seconds = totalSeconds % 60;
         return $"{minutes:D2}:{seconds:D2}";
+    }
+
+    private string GetImageSrc(byte[]? imageBytes)
+    {
+        if (imageBytes == null || imageBytes.Length == 0)
+            return "images/default-logo.png";
+
+        string base64 = Convert.ToBase64String(imageBytes);
+        int headerLength = Math.Min(imageBytes.Length, 100);
+        string headerText = System.Text.Encoding.UTF8.GetString(imageBytes, 0, headerLength);
+
+        if (headerText.Contains("<svg", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"data:image/svg+xml;base64,{base64}";
+        }
+
+        return $"data:image/png;base64,{base64}";
     }
 
     private void GoBack()

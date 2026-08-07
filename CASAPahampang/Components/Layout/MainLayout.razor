@@ -3,24 +3,25 @@
 
 <AuthInitializer />
 
-<div class="page">
-    <div class="sidebar">
+<div class="app-layout">
+    <header class="app-header">
         <NavMenu />
-    </div>
+    </header>
 
-    <main>
-        @* <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div> *@
-
-        <article class="content px-4">
+    <main class="app-main">
+        <article class="content-container">
             @Body
         </article>
     </main>
+
+    <footer class="app-footer">
+        <p>CASAPahampang Sports Management System &copy; 2026 ⚡ All Rights Reserved.</p>
+    </footer>
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
+    An unhandled error has occurred. ⚠️
+    <a href="." class="reload">Reload 🔄</a>
     <span class="dismiss">🗙</span>
 </div>
+

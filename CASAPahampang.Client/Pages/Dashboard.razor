@@ -1,12 +1,13 @@
 ﻿@page "/dashboard"
 @using System.Net.Http.Json
-@inject HttpClient Http
+@using System.Text.Json
 @using Microsoft.AspNetCore.SignalR.Client
 @using static Microsoft.AspNetCore.Components.Web.RenderMode
 @using CASAPahampang.Client.Dtos
 @implements IAsyncDisposable
 @rendermode InteractiveWebAssembly
 @inject NavigationManager Navigation
+@inject HttpClient Http
 @inject IJSRuntime JS
 
 <div class="dashboard-container">
@@ -198,8 +199,7 @@
 
 @code {
     private HubConnection? chatHubConnection;
-    private HubConnection? basketballHubConnection;
-    private HubConnection? volleyballHubConnection;
+    private HubConnection? sportsHubConnection;
 
     private string NewMessageText = string.Empty;
     private string CurrentUsername = "User";
@@ -224,19 +224,25 @@
     };
 
     private List<ChatMessageDto> ChatMessages = new();
-
-    // 🏆 Single dynamic list for all sports
     private List<MatchDto> AllMatches = new();
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            AllMatches = await Http.GetFromJsonAsync<List<MatchDto>>(Navigation.ToAbsoluteUri("api/matches")) ?? new();
+            var dbMatches = await Http.GetFromJsonAsync<List<MatchDto>>(Navigation.ToAbsoluteUri("api/matches")) ?? new();
+            
+            // 🚫 Reset stale DB live status on startup
+            foreach (var match in dbMatches)
+            {
+                match.IsLive = false;
+            }
+
+            AllMatches = dbMatches;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading matches from database: {ex.Message}");
+            Console.WriteLine($"Error loading initial matches: {ex.Message}");
         }
 
         // 💬 1. Chat Hub Connection
@@ -245,7 +251,7 @@
             .WithAutomaticReconnect()
             .Build();
 
-        chatHubConnection.On<string, string, string, DateTime>("ReceiveChatMessage", (user, message, avatarUrl, timestamp) =>
+        chatHubConnection.On<string, string, string, DateTime>("ReceiveChatMessage", async (user, message, avatarUrl, timestamp) =>
         {
             bool isMe = string.Equals(user, CurrentUsername, StringComparison.OrdinalIgnoreCase);
 
@@ -259,103 +265,119 @@
                 IsUser = isMe
             });
 
-            _ = InvokeAsync(StateHasChanged);
+            await InvokeAsync(StateHasChanged);
         });
 
-        chatHubConnection.On<int>("UpdateOnlineCount", (count) =>
+        chatHubConnection.On<int>("UpdateOnlineCount", async (count) =>
         {
             OnlineFanCount = count;
-            _ = InvokeAsync(StateHasChanged);
+            await InvokeAsync(StateHasChanged);
         });
 
-        // 🏀 2. Basketball Hub Connection
-        basketballHubConnection = new HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri("/basketballhub"))
+        // 🏆 2. Universal Sports Hub Connection
+        sportsHubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/sportshub"))
             .WithAutomaticReconnect()
             .Build();
 
-        basketballHubConnection.On<TeamDto>("ReceiveTeamUpdated", (updatedTeam) =>
+        sportsHubConnection.On<string>("ReceiveMatchState", async (json) =>
         {
-            UpdateTeamInMatches(AllMatches, updatedTeam);
-            _ = InvokeAsync(StateHasChanged);
-        });
-
-        // 🏐 3. Volleyball Hub Connection
-        volleyballHubConnection = new HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri("/volleyballhub"))
-            .WithAutomaticReconnect()
-            .Build();
-
-        volleyballHubConnection.On<string>("ReceiveMatchState", (matchStateJson) =>
-        {
-            try
-            {
-                var updatedMatch = System.Text.Json.JsonSerializer.Deserialize<MatchDto>(matchStateJson);
-                if (updatedMatch != null)
-                {
-                    var existing = AllMatches.FirstOrDefault(m => m.Id == updatedMatch.Id || m.GameNumber == updatedMatch.GameNumber);
-                    if (existing != null)
-                    {
-                        existing.Team1Score = updatedMatch.Team1Score;
-                        existing.Team2Score = updatedMatch.Team2Score;
-                        existing.IsLive = updatedMatch.IsLive;
-                        existing.StatusText = updatedMatch.StatusText;
-                        existing.PeriodDetails = updatedMatch.PeriodDetails;
-                        existing.MatchSchedule = updatedMatch.MatchSchedule;
-                    }
-                    else
-                    {
-                        AllMatches.Add(updatedMatch);
-                    }
-                    _ = InvokeAsync(StateHasChanged);
-                }
-            }
-            catch
-            {
-                // Ignore invalid JSON payloads gracefully
-            }
+            await UpdateMatchRealtimeFromJsonAsync(json);
         });
 
         await Task.WhenAll(
             chatHubConnection.StartAsync(),
-            basketballHubConnection.StartAsync(),
-            volleyballHubConnection.StartAsync()
+            sportsHubConnection.StartAsync()
         );
 
-        if (volleyballHubConnection.State == HubConnectionState.Connected)
+        // 📡 Request immediate state snapshots for all active matches
+        if (sportsHubConnection.State == HubConnectionState.Connected)
         {
-            await volleyballHubConnection.SendAsync("RequestMatchState");
+            await sportsHubConnection.SendAsync("RequestMatchState");
         }
     }
 
-    private void UpdateTeamInMatches(List<MatchDto> matches, TeamDto updatedTeam)
+    private async Task UpdateMatchRealtimeFromJsonAsync(string json)
     {
-        foreach (var match in matches)
+        try
         {
-            if (match.Team1 != null && (match.Team1.Id == updatedTeam.Id || match.Team1.Name == updatedTeam.Name))
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            // Extract Sport type from JSON payload
+            string sport = root.TryGetProperty("Sport", out var sportProp) ? sportProp.GetString() ?? "" : "";
+
+            Guid matchId = Guid.Empty;
+            if (root.TryGetProperty("MatchId", out var mIdProp))
             {
-                match.Team1.Name = updatedTeam.Name;
-                match.Team1.Logo = updatedTeam.Logo;
-                match.Team1.Record = updatedTeam.Record;
+                Guid.TryParse(mIdProp.GetString(), out matchId);
+            }
+            else if (root.TryGetProperty("Id", out var idProp))
+            {
+                Guid.TryParse(idProp.GetString(), out matchId);
             }
 
-            if (match.Team2 != null && (match.Team2.Id == updatedTeam.Id || match.Team2.Name == updatedTeam.Name))
+            int gameNumber = root.TryGetProperty("GameNumber", out var gNumProp) ? gNumProp.GetInt32() : 0;
+
+            // Match against both Sport AND (MatchId OR GameNumber)
+            var existing = AllMatches.FirstOrDefault(m => 
+                (string.IsNullOrWhiteSpace(sport) || string.Equals(m.Sport, sport, StringComparison.OrdinalIgnoreCase)) &&
+                ((matchId != Guid.Empty && m.Id == matchId) || (gameNumber > 0 && m.GameNumber == gameNumber))
+            );
+
+            if (existing != null)
             {
-                match.Team2.Name = updatedTeam.Name;
-                match.Team2.Logo = updatedTeam.Logo;
-                match.Team2.Record = updatedTeam.Record;
+                if (root.TryGetProperty("Team1Score", out var t1)) existing.Team1Score = t1.GetInt32();
+                if (root.TryGetProperty("Team2Score", out var t2)) existing.Team2Score = t2.GetInt32();
+                if (root.TryGetProperty("StatusText", out var status)) existing.StatusText = status.GetString() ?? string.Empty;
+                if (root.TryGetProperty("MatchSchedule", out var sched)) existing.MatchSchedule = sched.GetString() ?? string.Empty;
+
+                // 🎯 Fallback parser for Period / Quarter details across different sport payloads
+                if (root.TryGetProperty("PeriodDetails", out var periodDetailsProp))
+                {
+                    existing.PeriodDetails = periodDetailsProp.GetString() ?? string.Empty;
+                }
+                else if (root.TryGetProperty("PeriodText", out var periodTextProp))
+                {
+                    existing.PeriodDetails = periodTextProp.GetString() ?? string.Empty;
+                }
+                else if (root.TryGetProperty("CurrentSetNumber", out var setNumProp))
+                {
+                    existing.PeriodDetails = $"SET {setNumProp.GetInt32()}";
+                }
+
+                // 🔴 Handle IsLive flag
+                if (root.TryGetProperty("IsLive", out var isLiveProp))
+                {
+                    bool incomingIsLive = isLiveProp.GetBoolean();
+
+                    if (incomingIsLive && !string.IsNullOrWhiteSpace(existing.Sport))
+                    {
+                        // Reset IsLive for other matches in the same sport category
+                        foreach (var m in AllMatches.Where(m => string.Equals(m.Sport, existing.Sport, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            m.IsLive = false;
+                        }
+                    }
+
+                    existing.IsLive = incomingIsLive;
+                }
+
+                await InvokeAsync(StateHasChanged);
             }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating real-time match state: {ex.Message}");
         }
     }
 
-    // 🖼️ Helper method for logo rendering (Handles SVG and standard PNG/JPEG base64)
     private string GetImageSrc(byte[]? imageBytes)
     {
         if (imageBytes == null || imageBytes.Length == 0)
             return "images/default-logo.png";
 
         string base64 = Convert.ToBase64String(imageBytes);
-
         int headerLength = Math.Min(imageBytes.Length, 100);
         string headerText = System.Text.Encoding.UTF8.GetString(imageBytes, 0, headerLength);
 
@@ -367,7 +389,6 @@
         return $"data:image/png;base64,{base64}";
     }
 
-    // 🏆 Dynamic Sport Emoji Helper
     private string GetSportEmoji(string sport) => sport.ToLowerInvariant() switch
     {
         "basketball" => "🏀",
@@ -478,14 +499,9 @@
             await chatHubConnection.DisposeAsync();
         }
 
-        if (basketballHubConnection is not null)
+        if (sportsHubConnection is not null)
         {
-            await basketballHubConnection.DisposeAsync();
-        }
-
-        if (volleyballHubConnection is not null)
-        {
-            await volleyballHubConnection.DisposeAsync();
+            await sportsHubConnection.DisposeAsync();
         }
     }
 }
