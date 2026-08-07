@@ -45,6 +45,7 @@
                                 <option value="Volleyball">🏐 Volleyball</option>
                                 <option value="Badminton">🏸 Badminton</option>
                                 <option value="Chess">♟️ Chess</option>
+                                <option value="Checkers">🔴 Checkers</option>
                                 <option value="Other">⚽ Other</option>
                             </InputSelect>
                         </div>
@@ -84,14 +85,19 @@
                     <hr class="my-4 text-muted opacity-25" />
 
                     <div class="row g-3 mb-4">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Status Text</label>
-                            <InputText @bind-Value="match.StatusText" class="form-control" placeholder="e.g., 8:00 PM PHT or Q4 02:45" />
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Match Schedule</label>
+                            <InputText @bind-Value="match.MatchSchedule" class="form-control" placeholder="e.g., 8:00 PM PHT" />
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Status Text</label>
+                            <InputText @bind-Value="match.StatusText" class="form-control" placeholder="e.g., Q4 02:45 or Final" />
+                        </div>
+
+                        <div class="col-md-4">
                             <label class="form-label fw-bold">Period Details</label>
-                            <InputText @bind-Value="match.PeriodDetails" class="form-control" placeholder="e.g., 4th Quarter or Set 3 (21-19)" />
+                            <InputText @bind-Value="match.PeriodDetails" class="form-control" placeholder="e.g., 4th Quarter or Set 3" />
                         </div>
                     </div>
 

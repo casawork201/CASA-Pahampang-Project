@@ -31,6 +31,7 @@ public class MatchDto
     public bool IsLive { get; set; }
     public string StatusText { get; set; } = string.Empty;
     public string PeriodDetails { get; set; } = string.Empty;    
+    public string MatchSchedule { get; set; } = string.Empty;
 }
 public class ChatMessageDto
 {    

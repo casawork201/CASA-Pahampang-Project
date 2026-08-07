@@ -77,7 +77,8 @@ public class MatchesController : ControllerBase
             Team2Score = dto.Team2Score,
             IsLive = dto.IsLive,
             StatusText = dto.StatusText,
-            PeriodDetails = dto.PeriodDetails
+            PeriodDetails = dto.PeriodDetails,
+            MatchSchedule = dto.MatchSchedule // 👈 Mapped here
         };
 
         _context.Matches.Add(match);
@@ -110,6 +111,7 @@ public class MatchesController : ControllerBase
         match.IsLive = dto.IsLive;
         match.StatusText = dto.StatusText;
         match.PeriodDetails = dto.PeriodDetails;
+        match.MatchSchedule = dto.MatchSchedule; // 👈 Mapped here
 
         await _context.SaveChangesAsync();
 
@@ -119,19 +121,6 @@ public class MatchesController : ControllerBase
         var resultDto = ToDto(match);
         await _hubContext.Clients.All.SendAsync("ReceiveMatchUpdated", resultDto);
 
-        return NoContent();
-    }
-
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteMatch(Guid id)
-    {
-        var match = await _context.Matches.FindAsync(id);
-        if (match == null) return NotFound();
-
-        _context.Matches.Remove(match);
-        await _context.SaveChangesAsync();
-
-        await _hubContext.Clients.All.SendAsync("ReceiveMatchDeleted", id);
         return NoContent();
     }
 
@@ -161,6 +150,20 @@ public class MatchesController : ControllerBase
         Team2Score = m.Team2Score,
         IsLive = m.IsLive,
         StatusText = m.StatusText,
-        PeriodDetails = m.PeriodDetails
+        PeriodDetails = m.PeriodDetails,
+        MatchSchedule = m.MatchSchedule // 👈 Mapped here
     };
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteMatch(Guid id)
+    {
+        var match = await _context.Matches.FindAsync(id);
+        if (match == null) return NotFound();
+
+        _context.Matches.Remove(match);
+        await _context.SaveChangesAsync();
+
+        await _hubContext.Clients.All.SendAsync("ReceiveMatchDeleted", id);
+        return NoContent();
+    }
 }
