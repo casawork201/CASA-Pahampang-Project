@@ -1,4 +1,5 @@
 ﻿@using TestWASM.AuthLib.Components
+@using CASAPahampang.Client.Layout
 
 <nav class="navbar navbar-expand-lg navbar-dark px-3 px-md-4 h-100">
     <div class="container-fluid p-0">
@@ -43,8 +44,12 @@
                     </NavLink>
                 </li>
 
+                <RoleGatedNav Roles='new[] { "Admin" }' Href="admin" Label="Admin 🔐" IconClass="bi bi-shield-lock-fill" />
+
+                <RoleGatedNav Roles='new[] { "Admin", "Encoder" }' Href="team-management" Label="Teams 👥" IconClass="bi bi-people-fill" />
+
                 <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
-                    <LoginDisplay />
+                    <UserMenu />
                 </li>
             </ul>
         </div>

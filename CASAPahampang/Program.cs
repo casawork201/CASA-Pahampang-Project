@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using TestWASM.AuthLib.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -43,7 +44,7 @@ builder.Services.AddControllers()
 var jwt = builder.Configuration.GetSection("Jwt");
 var rawKey = jwt["Key"]?.Trim() ?? throw new InvalidOperationException("JWT Key is missing!");
 var key = Encoding.UTF8.GetBytes(rawKey);
-
+builder.Services.AddScoped<AuthService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

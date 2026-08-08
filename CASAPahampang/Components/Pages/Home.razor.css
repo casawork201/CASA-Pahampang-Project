@@ -1,13 +1,16 @@
-/* Container Setup */
+/* Container Setup - Fits strictly as one single page */
     .landing-container {
         position: relative;
         width: 100%;
-        min-height: 100vh;
-        min-height: 100dvh;
-        overflow-x: hidden;
-        overflow-y: auto;
+        height: calc(100vh - 145px);
+        min-height: 450px;
+        overflow: hidden;
         background-color: #f4f7f6;
         font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     }
 
     /* Background Video Layer */
@@ -39,8 +42,6 @@
         position: relative;
         width: 100%;
         height: 100%;
-        min-height: 100vh;
-        min-height: 100dvh;
         filter: saturate(115%) contrast(105%);
     }
 
@@ -117,16 +118,15 @@
         flex-direction: column;
         justify-content: space-between;
         align-items: center;
-        min-height: 100vh;
-        min-height: 100dvh;
-        padding: clamp(2rem, 5vh, 4rem) 1.25rem clamp(2rem, 5vh, 4rem) 1.25rem;
+        height: 100%;
+        padding: clamp(1rem, 3vh, 2.5rem) 1.25rem;
         box-sizing: border-box;
         text-align: center;
     }
 
     /* Branding Styles */
     .header-branding {
-        margin-top: 1rem;
+        margin-top: 0.5rem;
         animation: fadeInDown 1s ease-out;
         max-width: 100%;
     }
@@ -161,7 +161,7 @@
 
     /* Center-Bottom Action Footer */
     .action-footer {
-        margin-bottom: 1rem;
+        margin-bottom: 0.5rem;
         animation: fadeInUp 1s ease-out;
     }
 
@@ -228,6 +228,9 @@
 
     /* Mobile Responsive Adjustments */
     @media (max-width: 768px) {
+        .landing-container {
+            height: calc(100vh - 130px);
+        }
         .video-1 {
             width: 55vw;
             height: 55vw;

@@ -1,0 +1,41 @@
+﻿@using TestWASM.AuthLib.Services
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@inject AuthService AuthService
+@implements IDisposable
+
+@if (ShouldShow)
+{
+    <li class="nav-item">
+        <NavLink class="nav-link px-3 py-2 rounded" href="@Href">
+            <span class="@IconClass me-1"></span> @Label
+        </NavLink>
+    </li>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public string[] Roles { get; set; } = Array.Empty<string>();
+
+    [Parameter, EditorRequired]
+    public string Href { get; set; } = "";
+
+    [Parameter, EditorRequired]
+    public string Label { get; set; } = "";
+
+    [Parameter]
+    public string IconClass { get; set; } = "";
+
+    private bool ShouldShow =>
+        AuthService.IsLoggedIn &&
+        AuthService.Roles.Any(r => Roles.Contains(r, StringComparer.OrdinalIgnoreCase));
+
+    protected override void OnInitialized()
+    {
+        AuthService.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        AuthService.OnChange -= StateHasChanged;
+    }
+}

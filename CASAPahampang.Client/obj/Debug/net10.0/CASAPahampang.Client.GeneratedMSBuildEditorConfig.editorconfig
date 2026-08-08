@@ -1,4 +1,10 @@
 is_global = true
+build_property.EnableAotAnalyzer = 
+build_property.EnableSingleFileAnalyzer = 
+build_property.EnableTrimAnalyzer = false
+build_property.IncludeAllContentForSelfExtract = 
+build_property.VerifyReferenceTrimCompatibility = 
+build_property.VerifyReferenceAotCompatibility = 
 build_property.TargetFramework = net10.0
 build_property.TargetFrameworkIdentifier = .NETCoreApp
 build_property.TargetFrameworkVersion = v10.0
@@ -8,12 +14,12 @@ build_property.ProjectTypeGuids =
 build_property.InvariantGlobalization = false
 build_property.PlatformNeutralAssembly = 
 build_property.EnforceExtendedAnalyzerRules = 
-build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property._SupportedPlatformList = browser
 build_property.RootNamespace = CASAPahampang.Client
 build_property.RootNamespace = CASAPahampang.Client
 build_property.ProjectDir = /home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/
 build_property.EnableComHosting = 
-build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.EnableGeneratedComInterfaceComImportInterop = false
 build_property.RazorLangVersion = 9.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
@@ -24,6 +30,14 @@ build_property.EnableCodeStyleSeverity =
 
 [/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Layout/AuthInitializer.razor]
 build_metadata.AdditionalFiles.TargetPath = TGF5b3V0L0F1dGhJbml0aWFsaXplci5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Layout/RoleGatedNav.razor]
+build_metadata.AdditionalFiles.TargetPath = TGF5b3V0L1JvbGVHYXRlZE5hdi5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Layout/UserMenu.razor]
+build_metadata.AdditionalFiles.TargetPath = TGF5b3V0L1VzZXJNZW51LnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/Login.razor]
