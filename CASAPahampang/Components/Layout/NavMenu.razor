@@ -1,4 +1,5 @@
-﻿@using TestWASM.AuthLib.Components
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using TestWASM.AuthLib.Components
 @using CASAPahampang.Client.Layout
 
 <nav class="navbar navbar-expand-lg navbar-dark px-3 px-md-4 h-100">
@@ -21,32 +22,39 @@
                 </li>
 
                 <li class="nav-item">
-                    <NavLink class="nav-link px-3 py-2 rounded" href="counter">
-                        <span class="bi bi-plus-square-fill me-1"></span> Counter 🔢
-                    </NavLink>
-                </li>
-
-                <li class="nav-item">
-                    <NavLink class="nav-link px-3 py-2 rounded" href="weather">
-                        <span class="bi bi-list-nested me-1"></span> Weather ⛅
-                    </NavLink>
-                </li>
-
-                <li class="nav-item">
                     <NavLink class="nav-link px-3 py-2 rounded" href="scoreboard">
                         <span class="bi bi-display me-1"></span> Scoreboard 🏀
                     </NavLink>
                 </li>
 
-                <li class="nav-item">
-                    <NavLink class="nav-link px-3 py-2 rounded" href="scorekeeper">
-                        <span class="bi bi-controller me-1"></span> Scorekeeper 🎮
-                    </NavLink>
-                </li>
+                <AuthorizeView>
+                    <NotAuthorized>
+                        <li class="nav-item">
+                            <NavLink class="nav-link px-3 py-2 rounded" href="counter">
+                                <span class="bi bi-plus-square-fill me-1"></span> Counter 🔢
+                            </NavLink>
+                        </li>
+                        <li class="nav-item">
+                            <NavLink class="nav-link px-3 py-2 rounded" href="weather">
+                                <span class="bi bi-list-nested me-1"></span> Weather ⛅
+                            </NavLink>
+                        </li>
+                    </NotAuthorized>
+                    
+                    <Authorized>
+                        <li class="nav-item">
+                            <NavLink class="nav-link px-3 py-2 rounded" href="scorekeeper">
+                                <span class="bi bi-controller me-1"></span> Basketball Scorekeeper 🏀
+                            </NavLink>
+                        </li>
 
-                <RoleGatedNav Roles='new[] { "Admin" }' Href="admin" Label="Admin 🔐" IconClass="bi bi-shield-lock-fill" />
+                        <RoleGatedNav Roles='new[] { "Admin", "Encoder" }' Href="volleyball-scorekeeper" Label="Volleyball Scorekeeper 🏐" IconClass="bi bi-controller" />
 
-                <RoleGatedNav Roles='new[] { "Admin", "Encoder" }' Href="team-management" Label="Teams 👥" IconClass="bi bi-people-fill" />
+                        <RoleGatedNav Roles='new[] { "Admin" }' Href="admin" Label="Admin 🔐" IconClass="bi bi-shield-lock-fill" />
+
+                        <RoleGatedNav Roles='new[] { "Admin", "Encoder" }' Href="team-management" Label="Teams 👥" IconClass="bi bi-people-fill" />
+                    </Authorized>
+                </AuthorizeView>
 
                 <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
                     <UserMenu />
