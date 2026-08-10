@@ -1,0 +1,454 @@
+@page "/matches/record-winner"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using TestWASM.AuthLib.Services
+@using CASAPahampang.Client.Dtos
+@using Microsoft.AspNetCore.SignalR.Client
+@using System.Text.Json
+@inject AuthService AuthService
+@inject NavigationManager Nav
+@inject HttpClient Http
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<PageTitle>Record Match Winners 🏆</PageTitle>
+
+<div class="container-fluid p-3 p-md-4 record-winner-page">
+    <div class="sports-header-banner p-4 rounded-4 mb-4 shadow-sm text-white">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+            <div>
+                <h2 class="fw-extrabold mb-1">🏟️ CASA Pahampang Arena</h2>
+                <div class="text-white-50">Select a sport or parlor game, then declare the winning team to conclude the match! 🥇</div>
+            </div>
+            <div class="connection-badge @(isConnected ? "online" : "offline")">
+                <span class="dot"></span> @(isConnected ? "Live Stadium Connected 🟢" : "Offline 🔴")
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(toastMessage))
+    {
+        <div class="alert @(toastIsError ? "alert-danger" : "alert-success") alert-dismissible fade show shadow-sm" role="alert">
+            @toastMessage
+            <button type="button" class="btn-close" @onclick="() => toastMessage = string.Empty"></button>
+        </div>
+    }
+
+    <div class="sport-pills-wrapper mb-4">
+        @if (sports == null)
+        {
+            <div class="spinner-border spinner-border-sm text-success"></div>
+        }
+        else if (!sports.Any())
+        {
+            <span class="text-muted small">No sports or parlor games found yet. 📭</span>
+        }
+        else
+        {
+            <div class="sport-pills">
+                @foreach (var sport in sports)
+                {
+                    <button type="button"
+                            class="sport-pill btn @(selectedSport == sport ? "btn-success fw-bold text-white shadow active" : "btn-light text-dark border") flex-shrink-0"
+                            @onclick="() => SelectSport(sport)">
+                        <span class="sport-emoji">@GetSportEmoji(sport)</span> @sport
+                    </button>
+                }
+            </div>
+        }
+    </div>
+
+    @if (isLoadingMatches)
+    {
+        <div class="text-center py-5"><div class="spinner-border text-success"></div></div>
+    }
+    else if (selectedSport == null)
+    {
+        <div class="empty-state text-center py-5 rounded-4 shadow-sm">
+            <div class="empty-icon fs-1 mb-2">🎯</div>
+            <h5 class="fw-bold text-secondary">Choose a Sport or Parlor Game Above</h5>
+            <p class="text-muted small">Select an event from the banner to load match lineups and record winners.</p>
+        </div>
+    }
+    else if (matches == null || !matches.Any())
+    {
+        <div class="empty-state text-center py-5 rounded-4 shadow-sm">
+            <div class="empty-icon fs-1 mb-2">📭</div>
+            <h5 class="fw-bold text-secondary">No Matches Scheduled</h5>
+            <p class="text-muted small">No matches found for <strong>@selectedSport</strong> right now.</p>
+        </div>
+    }
+    else
+    {
+        var pendingMatches = matches.Where(m => !string.Equals(m.StatusText, "Concluded", StringComparison.OrdinalIgnoreCase)).ToList();
+        var concludedMatches = matches.Where(m => string.Equals(m.StatusText, "Concluded", StringComparison.OrdinalIgnoreCase)).ToList();
+
+        @if (pendingMatches.Any())
+        {
+            <div class="mb-5">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <h4 class="fw-bold text-dark m-0">⏳ Pending Matches</h4>
+                    <span class="badge bg-warning text-dark rounded-pill">@pendingMatches.Count</span>
+                </div>
+                <div class="row g-3">
+                    @foreach (var match in pendingMatches)
+                    {
+                        <div class="col-12 col-md-6 col-xl-4">
+                            <div class="match-card p-3 rounded-4 shadow-sm border-light">
+                                <div class="match-card-header d-flex justify-content-between align-items-center mb-3">
+                                    <span class="game-number fw-bold text-success">Game #@match.GameNumber</span>
+                                    <span class="badge bg-warning text-dark px-2 py-1">PENDING ⏳</span>
+                                </div>
+
+                                <div class="match-teams d-flex flex-column gap-2 mb-3">
+                                    <button type="button"
+                                            class="btn team-slot d-flex align-items-center justify-content-between p-2 rounded-3 btn-outline-dark"
+                                            disabled="@isSubmitting"
+                                            @onclick='() => SetWinnerAndConcludeAsync(match, 1)'>
+                                        <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                            <img src="@GetImageSrc(match.Team1?.Logo)" class="team-logo rounded-circle" style="width: 30px; height: 30px; object-fit: cover;" alt="@(match.Team1?.Name ?? "Team 1")" />
+                                            <span class="fw-bold text-truncate">@(match.Team1?.Name ?? "Team 1")</span>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-2">
+                                            <span class="badge bg-secondary text-white">Score: @match.Team1Score</span>
+                                        </div>
+                                    </button>
+
+                                    <div class="text-center text-muted fw-bold small my-1">VS</div>
+
+                                    <button type="button"
+                                            class="btn team-slot d-flex align-items-center justify-content-between p-2 rounded-3 btn-outline-dark"
+                                            disabled="@isSubmitting"
+                                            @onclick='() => SetWinnerAndConcludeAsync(match, 2)'>
+                                        <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                            <img src="@GetImageSrc(match.Team2?.Logo)" class="team-logo rounded-circle" style="width: 30px; height: 30px; object-fit: cover;" alt="@(match.Team2?.Name ?? "Team 2")" />
+                                            <span class="fw-bold text-truncate">@(match.Team2?.Name ?? "Team 2")</span>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-2">
+                                            <span class="badge bg-secondary text-white">Score: @match.Team2Score</span>
+                                        </div>
+                                    </button>
+                                </div>
+
+                                <div class="match-footer text-muted small d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-1 pt-2 border-top">
+                                    <span>📍 @match.Venue</span>
+                                    @if (!string.IsNullOrWhiteSpace(match.MatchSchedule))
+                                    {
+                                        <span>🕒 @match.MatchSchedule</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (concludedMatches.Any())
+        {
+            <div class="mb-4">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <h4 class="fw-bold text-success m-0">🏆 Concluded Matches</h4>
+                    <span class="badge bg-success rounded-pill">@concludedMatches.Count</span>
+                </div>
+                <div class="row g-3">
+                    @foreach (var match in concludedMatches)
+                    {
+                        <div class="col-12 col-md-6 col-xl-4">
+                            <div class="match-card completed p-3 rounded-4 shadow-sm border-success">
+                                <div class="match-card-header d-flex justify-content-between align-items-center mb-3">
+                                    <span class="game-number fw-bold text-success">Game #@match.GameNumber</span>
+                                    <span class="badge bg-success px-2 py-1">CONCLUDED ✔️</span>
+                                </div>
+
+                                <div class="match-teams d-flex flex-column gap-2 mb-3">
+                                    <button type="button"
+                                            class="btn team-slot d-flex align-items-center justify-content-between p-2 rounded-3 @(match.Team1Score > match.Team2Score ? "btn-success text-white" : "btn-outline-dark opacity-75")"
+                                            disabled="@isSubmitting"
+                                            @onclick='() => SetWinnerAndConcludeAsync(match, 1)'>
+                                        <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                            <img src="@GetImageSrc(match.Team1?.Logo)" class="team-logo rounded-circle" style="width: 30px; height: 30px; object-fit: cover;" alt="@(match.Team1?.Name ?? "Team 1")" />
+                                            <span class="fw-bold text-truncate">@(match.Team1?.Name ?? "Team 1")</span>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-2">
+                                            <span class="badge bg-secondary text-white">Score: @match.Team1Score</span>
+                                            @if (match.Team1Score > match.Team2Score)
+                                            {
+                                                <span>🏆</span>
+                                            }
+                                        </div>
+                                    </button>
+
+                                    <div class="text-center text-muted fw-bold small my-1">VS</div>
+
+                                    <button type="button"
+                                            class="btn team-slot d-flex align-items-center justify-content-between p-2 rounded-3 @(match.Team2Score > match.Team1Score ? "btn-success text-white" : "btn-outline-dark opacity-75")"
+                                            disabled="@isSubmitting"
+                                            @onclick='() => SetWinnerAndConcludeAsync(match, 2)'>
+                                        <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                            <img src="@GetImageSrc(match.Team2?.Logo)" class="team-logo rounded-circle" style="width: 30px; height: 30px; object-fit: cover;" alt="@(match.Team2?.Name ?? "Team 2")" />
+                                            <span class="fw-bold text-truncate">@(match.Team2?.Name ?? "Team 2")</span>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-2">
+                                            <span class="badge bg-secondary text-white">Score: @match.Team2Score</span>
+                                            @if (match.Team2Score > match.Team1Score)
+                                            {
+                                                <span>🏆</span>
+                                            }
+                                        </div>
+                                    </button>
+                                </div>
+
+                                <div class="match-footer text-muted small d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-1 pt-2 border-top">
+                                    <span>📍 @match.Venue</span>
+                                    @if (!string.IsNullOrWhiteSpace(match.MatchSchedule))
+                                    {
+                                        <span>🕒 @match.MatchSchedule</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+
+@code {
+    private bool isConnected;
+    private bool isLoadingMatches;
+    private bool isSubmitting;
+    private string toastMessage = "";
+    private bool toastIsError;
+
+    private List<MatchDto> allMatches = new();
+    private List<string>? sports;
+    private string? selectedSport;
+    private List<MatchDto>? matches;
+
+    private HubConnection? hubConnection;
+
+    private static readonly Dictionary<string, string> SportEmojis = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Checkers"] = "🏁",
+        ["Chess"] = "♟️",
+        ["Scrabble"] = "🔤",
+        ["Dart"] = "🎯",
+        ["Dominoes"] = "🀄",
+        ["Badminton"] = "🏸",
+        ["Table Tennis"] = "🏓",
+        ["Sepak Takraw"] = "🥎",
+        ["Football"] = "⚽",
+        ["Tennis"] = "🎾",
+        ["Taekwondo"] = "🥋",
+        ["Bingo"] = "🎫"
+    };
+
+    private string GetSportEmoji(string sport) => SportEmojis.TryGetValue(sport, out var e) ? e : "🏅";
+
+    private string GetImageSrc(byte[]? imageBytes)
+    {
+        if (imageBytes == null || imageBytes.Length == 0)
+            return "images/default-logo.png";
+
+        string base64 = Convert.ToBase64String(imageBytes);
+        int headerLength = Math.Min(imageBytes.Length, 100);
+        string headerText = System.Text.Encoding.UTF8.GetString(imageBytes, 0, headerLength);
+
+        if (headerText.Contains("<svg", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"data:image/svg+xml;base64,{base64}";
+        }
+
+        return $"data:image/png;base64,{base64}";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthService.IsInitialized)
+            await AuthService.InitializeAsync();
+
+        if (!AuthService.IsLoggedIn || !AuthService.Roles.Any(r =>
+                r.Equals("Admin", StringComparison.OrdinalIgnoreCase) ||
+                r.Equals("Encoder", StringComparison.OrdinalIgnoreCase)))
+        {
+            Nav.NavigateTo("/");
+            return;
+        }
+
+        await LoadSportsAndMatches();
+        await ConnectHub();
+    }
+
+    private async Task LoadSportsAndMatches()
+    {
+        isLoadingMatches = true;
+        try
+        {
+            var response = await Http.GetAsync("api/matches");
+            if (response.IsSuccessStatusCode)
+            {
+                allMatches = await response.Content.ReadFromJsonAsync<List<MatchDto>>() ?? new();
+                
+                sports = allMatches
+                    .Select(m => m.Sport)
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Where(s => !string.Equals(s, "Basketball", StringComparison.OrdinalIgnoreCase) &&
+                                !string.Equals(s, "Volleyball", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+        }
+        catch
+        {
+            ShowToast("Failed to load match data. ❌", true);
+        }
+        finally
+        {
+            isLoadingMatches = false;
+        }
+    }
+
+    private void SelectSport(string sport)
+    {
+        selectedSport = sport;
+        matches = allMatches
+            .Where(m => string.Equals(m.Sport, sport, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        StateHasChanged();
+    }
+
+    private async Task SetWinnerAndConcludeAsync(MatchDto match, int winningTeamNumber)
+    {
+        if (match == null) return;
+
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", $"Declare winner for Game #{match.GameNumber}? This will set the score to 1-0 and conclude the match. 🏆");
+        if (!confirmed) return;
+
+        isSubmitting = true;
+        string winningTeamName = "";
+
+        if (winningTeamNumber == 1)
+        {
+            match.Team1Score = 1;
+            match.Team2Score = 0;
+            winningTeamName = match.Team1?.Name ?? "Team 1";
+        }
+        else if (winningTeamNumber == 2)
+        {
+            match.Team1Score = 0;
+            match.Team2Score = 1;
+            winningTeamName = match.Team2?.Name ?? "Team 2";
+        }
+
+        match.StatusText = "Concluded";
+        match.IsLive = false;
+
+        try
+        {
+            await SaveMatchToDbAsync(match);
+
+            if (winningTeamNumber == 1 && match.Team1 != null)
+            {
+                match.Team1.Record = IncrementRecord(match.Team1.Record);
+                await SaveTeamToDbAsync(match.Team1);
+            }
+            else if (winningTeamNumber == 2 && match.Team2 != null)
+            {
+                match.Team2.Record = IncrementRecord(match.Team2.Record);
+                await SaveTeamToDbAsync(match.Team2);
+            }
+
+            ShowToast($"🏁 Game #{match.GameNumber} concluded! Winner: {winningTeamName} (Score: 1-0) ✨", false);
+
+            await BroadcastGameStateAsync(match);
+        }
+        catch (Exception ex)
+        {
+            ShowToast($"❌ Error concluding match: {ex.Message}", true);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private string IncrementRecord(string currentRecord)
+    {
+        if (int.TryParse(currentRecord, out int currentVal))
+        {
+            return (currentVal + 1).ToString();
+        }
+        return "1";
+    }
+
+    private async Task SaveMatchToDbAsync(MatchDto match)
+    {
+        await Http.PutAsJsonAsync($"api/matches/{match.Id}", match);
+    }
+
+    private async Task SaveTeamToDbAsync(TeamDto team)
+    {
+        var response = await Http.PutAsJsonAsync($"api/team/{team.Id}", team);
+        if (!response.IsSuccessStatusCode)
+        {
+            Console.WriteLine($"Failed to update team {team.Id}: {response.StatusCode}");
+        }
+    }
+
+    private async Task BroadcastGameStateAsync(MatchDto match)
+    {
+        if (hubConnection is not null && hubConnection.State == HubConnectionState.Connected)
+        {
+            var state = new
+            {
+                Sport = match.Sport ?? selectedSport ?? "Sports",
+                MatchId = match.Id,
+                GameNumber = match.GameNumber,
+                Team1Name = match.Team1?.Name ?? "Team 1",
+                Team1Score = match.Team1Score,
+                Team2Name = match.Team2?.Name ?? "Team 2",
+                Team2Score = match.Team2Score,
+                IsLive = match.IsLive,
+                StatusText = match.StatusText
+            };
+
+            string json = JsonSerializer.Serialize(state);
+            await hubConnection.SendAsync("SendMatchState", json);
+        }
+    }
+
+    private void ShowToast(string message, bool isError)
+    {
+        toastMessage = message;
+        toastIsError = isError;
+    }
+
+    private async Task ConnectHub()
+    {
+        try
+        {
+            hubConnection = new HubConnectionBuilder()
+                .WithUrl(new Uri(new Uri(Nav.BaseUri), "/sportshub"))
+                .WithAutomaticReconnect()
+                .Build();
+
+            hubConnection.Reconnected += _ => { isConnected = true; return InvokeAsync(StateHasChanged); };
+            hubConnection.Closed += _ => { isConnected = false; return InvokeAsync(StateHasChanged); };
+
+            await hubConnection.StartAsync();
+            isConnected = true;
+        }
+        catch
+        {
+            isConnected = false;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection != null)
+            await hubConnection.DisposeAsync();
+    }
+}

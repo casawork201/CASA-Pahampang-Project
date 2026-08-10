@@ -6,9 +6,10 @@
 @using System.Net.Http.Json
 @using CASAPahampang.Client.Dtos
 @implements IAsyncDisposable
-@rendermode InteractiveWebAssembly
-@inject NavigationManager Navigation
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @inject HttpClient Http
+@inject AuthService authService
+@inject NavigationManager Nav
 @inject IJSRuntime JS
 
 <div class="scorekeeper-container w-100 container-fluid px-2 px-md-3 py-3" style="max-width: 100% !important;">
@@ -280,10 +281,27 @@
 
     protected override async Task OnInitializedAsync()
     {
+        Console.WriteLine("=== [CLIENT DEBUG] OnInitializedAsync Started ===");
+
+        if (!authService.IsInitialized)
+            await authService.InitializeAsync();
+
+        if (!authService.IsLoggedIn || !authService.Roles.Contains("Admin"))
+        {
+            Console.WriteLine("[CLIENT DEBUG] Access Denied -> Redirecting to /login");
+            Nav.NavigateTo("login");
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(authService.AccessToken))
+        {
+            Http.DefaultRequestHeaders.Authorization = 
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authService.AccessToken);
+        }
         await LoadAvailableMatchesAsync();
 
         hubConnection = new HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri("/sportshub"))
+            .WithUrl(Nav.ToAbsoluteUri("/sportshub"))
             .WithAutomaticReconnect()
             .Build();
 
@@ -302,7 +320,7 @@
     {
         try
         {
-            var allMatches = await Http.GetFromJsonAsync<List<MatchDto>>(Navigation.ToAbsoluteUri("api/matches")) ?? new();
+            var allMatches = await Http.GetFromJsonAsync<List<MatchDto>>(Nav.ToAbsoluteUri("api/matches")) ?? new();
 
             AvailableMatches = allMatches
                 .Where(m => !string.Equals(m.StatusText, "Concluded", StringComparison.OrdinalIgnoreCase) 
@@ -355,7 +373,7 @@
 
         try
         {
-            var allMatchesInDb = await Http.GetFromJsonAsync<List<MatchDto>>(Navigation.ToAbsoluteUri("api/matches")) ?? new();
+            var allMatchesInDb = await Http.GetFromJsonAsync<List<MatchDto>>(Nav.ToAbsoluteUri("api/matches")) ?? new();
             var volleyballMatches = allMatchesInDb
                 .Where(m => string.Equals(m.Sport, "Volleyball", StringComparison.OrdinalIgnoreCase))
                 .ToList();
@@ -435,7 +453,7 @@
     {
         try
         {
-            await Http.PutAsJsonAsync(Navigation.ToAbsoluteUri($"api/matches/{match.Id}"), match);
+            await Http.PutAsJsonAsync(Nav.ToAbsoluteUri($"api/matches/{match.Id}"), match);
         }
         catch (Exception ex)
         {
@@ -447,7 +465,7 @@
     {
         try
         {
-            var response = await Http.PutAsJsonAsync(Navigation.ToAbsoluteUri($"api/team/{team.Id}"), team);
+            var response = await Http.PutAsJsonAsync(Nav.ToAbsoluteUri($"api/team/{team.Id}"), team);
             if (!response.IsSuccessStatusCode)
             {
                 Console.WriteLine($"Failed to update team {team.Id}: {response.StatusCode}");
@@ -619,7 +637,7 @@
 
     private void GoBack()
     {
-        Navigation.NavigateTo("/dashboard");
+        Nav.NavigateTo("/dashboard");
     }
 
     public async ValueTask DisposeAsync()

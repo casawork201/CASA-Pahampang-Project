@@ -1,0 +1,115 @@
+.record-winner-page {
+        background: linear-gradient(135deg, #f0f4f1 0%, #e8f0eb 100%);
+        min-height: 100vh;
+        color: #212529;
+        overflow-x: hidden;
+    }
+
+    .sports-header-banner {
+        background: linear-gradient(135deg, #198754 0%, #0f5132 100%);
+        box-shadow: 0 4px 15px rgba(25, 135, 84, 0.2);
+    }
+
+    .connection-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        white-space: nowrap;
+        backdrop-filter: blur(5px);
+    }
+
+    .connection-badge.online .dot {
+        height: 8px;
+        width: 8px;
+        background-color: #2ecc71;
+        border-radius: 50%;
+        box-shadow: 0 0 10px #2ecc71;
+    }
+
+    .connection-badge.offline .dot {
+        height: 8px;
+        width: 8px;
+        background-color: #e74c3c;
+        border-radius: 50%;
+    }
+
+    .sport-pills-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 6px;
+    }
+
+    .sport-pills-wrapper::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .sport-pills-wrapper::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+
+    .sport-pills {
+        display: inline-flex;
+        gap: 10px;
+    }
+
+    .sport-pill {
+        border-radius: 30px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.2s ease-in-out;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    .sport-pill:hover {
+        transform: translateY(-2px);
+        background-color: #e2e8f0;
+    }
+
+    .match-card {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        height: 100%;
+    }
+
+    .match-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    .match-card.completed {
+        border-color: #198754 !important;
+        background: #f4faf6 !important;
+    }
+
+    .team-slot {
+        transition: all 0.2s ease;
+        text-align: left;
+        width: 100%;
+        background-color: #f8f9fa;
+    }
+
+    .team-slot:hover {
+        background-color: #e9ecef;
+        border-color: #adb5bd;
+    }
+
+    .team-logo {
+        border: 2px solid #cbd5e1;
+        flex-shrink: 0;
+    }
+
+    .empty-state {
+        background: #ffffff;
+        border: 2px dashed #cbd5e1;
+        border-radius: 16px;
+    }

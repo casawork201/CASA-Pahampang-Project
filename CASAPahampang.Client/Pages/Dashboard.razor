@@ -16,10 +16,7 @@
             <div class="nav-buttons">
                 <button class="btn-back" @onclick="GoBack" type="button">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-                    Back
-                </button>
-                <button class="btn-bingo" @onclick="GoToBingo" type="button">
-                    🎯 Bingo Game
+                    Back 🔙
                 </button>
             </div>
             <div class="header-title">
@@ -28,7 +25,7 @@
             </div>
         </div>
         <div class="live-badge">
-            <span class="pulse-dot"></span> LIVE TOURNAMENT
+            <span class="pulse-dot"></span> LIVE TOURNAMENT 🔴
         </div>
     </header>
 
@@ -47,7 +44,6 @@
                     var sportName = sportGroup.Key;
                     var matchesInSport = sportGroup.ToList();
                     
-                    // Count unique participating teams for this sport
                     var uniqueTeamsCount = matchesInSport
                         .SelectMany(m => new[] { m.Team1Id, m.Team2Id })
                         .Where(id => id != Guid.Empty)
@@ -58,7 +54,7 @@
                         <div class="section-header">
                             <h2>@GetSportEmoji(sportName) @sportName</h2>
                             <span class="game-count">
-                                @uniqueTeamsCount Teams • @matchesInSport.Count @(matchesInSport.Count == 1 ? "Match" : "Matches")
+                                @uniqueTeamsCount Teams 👥 • @matchesInSport.Count @(matchesInSport.Count == 1 ? "Match" : "Matches") 🎮
                             </span>
                         </div>
 
@@ -68,13 +64,19 @@
                                 <div class="match-row">
                                     <div class="match-info">
                                         <span class="game-num">GAME @match.GameNumber</span>
-                                        <span class="venue">@match.Venue</span>
+                                        <span class="venue">@match.Venue 📍</span>
                                     </div>
 
                                     <div class="match-versus">
                                         <div class="team-cell team-left">
                                             <div class="team-text">
-                                                <span class="team-name">@(match.Team1?.Name ?? "TBD")</span>
+                                                <span class="team-name" title="@(match.Team1?.Name ?? "TBD")">
+                                                    @if (match.Team1Score > match.Team2Score)
+                                                    {
+                                                        <span class="winner-crown">👑</span>
+                                                    }
+                                                    @GetShortTeamName(match.Team1?.Name)
+                                                </span>
                                                 <span class="team-record">@(match.Team1?.Record ?? "0")</span>
                                             </div>
                                             <img src="@GetImageSrc(match.Team1?.Logo)" alt="@(match.Team1?.Name ?? "Team") Logo" class="team-logo" />
@@ -87,15 +89,21 @@
                                                 <span>@match.Team2Score</span>
                                             </div>
                                             
-                                            <span class="schedule-pill status-badge status-live">
-                                                @(string.IsNullOrWhiteSpace(match.MatchSchedule) ? "TBD" : match.MatchSchedule)
+                                            <span class="schedule-pill status-badge @(match.IsLive ? "status-live" : "status-final")">
+                                                @(string.IsNullOrWhiteSpace(match.MatchSchedule) ? "TBD" : match.MatchSchedule) 🕒
                                             </span>
                                         </div>
 
                                         <div class="team-cell team-right">
                                             <img src="@GetImageSrc(match.Team2?.Logo)" alt="@(match.Team2?.Name ?? "Team") Logo" class="team-logo" />
                                             <div class="team-text">
-                                                <span class="team-name">@(match.Team2?.Name ?? "TBD")</span>
+                                                <span class="team-name" title="@(match.Team2?.Name ?? "TBD")">
+                                                    @GetShortTeamName(match.Team2?.Name)
+                                                    @if (match.Team2Score > match.Team1Score)
+                                                    {
+                                                        <span class="winner-crown">👑</span>
+                                                    }
+                                                </span>
                                                 <span class="team-record">@(match.Team2?.Record ?? "0")</span>
                                             </div>
                                         </div>
@@ -129,7 +137,7 @@
             <section class="chat-section">
                 <div class="section-header">
                     <h2>💬 Live Fan Chat</h2>
-                    <span class="game-count">@OnlineFanCount Fans Online</span>
+                    <span class="game-count">@OnlineFanCount Fans Online 🟢</span>
                 </div>
 
                 <div class="chatbox-card">
@@ -197,6 +205,18 @@
     </div>
 </div>
 
+<style>
+    .status-badge.status-final {
+        background: rgba(56, 239, 125, 0.18);
+        color: #0d9e73;
+        font-weight: 800;
+    }
+    .winner-crown {
+        margin-left: 0.3rem;
+        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));
+    }
+</style>
+
 @code {
     private HubConnection? chatHubConnection;
     private HubConnection? sportsHubConnection;
@@ -226,13 +246,25 @@
     private List<ChatMessageDto> ChatMessages = new();
     private List<MatchDto> AllMatches = new();
 
+    private string GetShortTeamName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "TBD";
+        if (name.Length <= 12) return name;
+
+        var words = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length > 1)
+        {
+            return string.Concat(words.Select(w => w[0])).ToUpper();
+        }
+        return name.Substring(0, 10) + "...";
+    }
+
     protected override async Task OnInitializedAsync()
     {
         try
         {
             var dbMatches = await Http.GetFromJsonAsync<List<MatchDto>>(Navigation.ToAbsoluteUri("api/matches")) ?? new();
             
-            // 🚫 Reset stale DB live status on startup
             foreach (var match in dbMatches)
             {
                 match.IsLive = false;
@@ -245,7 +277,6 @@
             Console.WriteLine($"Error loading initial matches: {ex.Message}");
         }
 
-        // 💬 1. Chat Hub Connection
         chatHubConnection = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("/chathub"))
             .WithAutomaticReconnect()
@@ -274,7 +305,6 @@
             await InvokeAsync(StateHasChanged);
         });
 
-        // 🏆 2. Universal Sports Hub Connection
         sportsHubConnection = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("/sportshub"))
             .WithAutomaticReconnect()
@@ -290,7 +320,6 @@
             sportsHubConnection.StartAsync()
         );
 
-        // 📡 Request immediate state snapshots for all active matches
         if (sportsHubConnection.State == HubConnectionState.Connected)
         {
             await sportsHubConnection.SendAsync("RequestMatchState");
@@ -304,7 +333,6 @@
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
 
-            // Extract Sport type from JSON payload
             string sport = root.TryGetProperty("Sport", out var sportProp) ? sportProp.GetString() ?? "" : "";
 
             Guid matchId = Guid.Empty;
@@ -319,7 +347,6 @@
 
             int gameNumber = root.TryGetProperty("GameNumber", out var gNumProp) ? gNumProp.GetInt32() : 0;
 
-            // Match against both Sport AND (MatchId OR GameNumber)
             var existing = AllMatches.FirstOrDefault(m => 
                 (string.IsNullOrWhiteSpace(sport) || string.Equals(m.Sport, sport, StringComparison.OrdinalIgnoreCase)) &&
                 ((matchId != Guid.Empty && m.Id == matchId) || (gameNumber > 0 && m.GameNumber == gameNumber))
@@ -332,7 +359,6 @@
                 if (root.TryGetProperty("StatusText", out var status)) existing.StatusText = status.GetString() ?? string.Empty;
                 if (root.TryGetProperty("MatchSchedule", out var sched)) existing.MatchSchedule = sched.GetString() ?? string.Empty;
 
-                // 🎯 Fallback parser for Period / Quarter details across different sport payloads
                 if (root.TryGetProperty("PeriodDetails", out var periodDetailsProp))
                 {
                     existing.PeriodDetails = periodDetailsProp.GetString() ?? string.Empty;
@@ -346,14 +372,12 @@
                     existing.PeriodDetails = $"SET {setNumProp.GetInt32()}";
                 }
 
-                // 🔴 Handle IsLive flag
                 if (root.TryGetProperty("IsLive", out var isLiveProp))
                 {
                     bool incomingIsLive = isLiveProp.GetBoolean();
 
                     if (incomingIsLive && !string.IsNullOrWhiteSpace(existing.Sport))
                     {
-                        // Reset IsLive for other matches in the same sport category
                         foreach (var m in AllMatches.Where(m => string.Equals(m.Sport, existing.Sport, StringComparison.OrdinalIgnoreCase)))
                         {
                             m.IsLive = false;
@@ -485,11 +509,6 @@
     private void GoBack()
     {
         Navigation.NavigateTo("/");
-    }
-
-    private void GoToBingo()
-    {
-        Navigation.NavigateTo("/bingo");
     }
 
     public async ValueTask DisposeAsync()

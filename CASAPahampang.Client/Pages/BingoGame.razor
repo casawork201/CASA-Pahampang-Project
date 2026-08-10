@@ -3,8 +3,10 @@
 @using static Microsoft.AspNetCore.Components.Web.RenderMode
 @using System.Timers
 @implements IAsyncDisposable
-@rendermode InteractiveWebAssembly
-@inject NavigationManager Navigation
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@inject HttpClient Http
+@inject AuthService authService
+@inject NavigationManager Nav
 @inject IJSRuntime JS
 
 <div class="bingo-container">
@@ -342,8 +344,25 @@
 
     protected override async Task OnInitializedAsync()
     {
+        Console.WriteLine("=== [CLIENT DEBUG] OnInitializedAsync Started ===");
+
+        if (!authService.IsInitialized)
+            await authService.InitializeAsync();
+
+        if (!authService.IsLoggedIn || !authService.Roles.Contains("Admin"))
+        {
+            Console.WriteLine("[CLIENT DEBUG] Access Denied -> Redirecting to /login");
+            Nav.NavigateTo("login");
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(authService.AccessToken))
+        {
+            Http.DefaultRequestHeaders.Authorization = 
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authService.AccessToken);
+        }
         hubConnection = new HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri("/bingohub"))
+            .WithUrl(Nav.ToAbsoluteUri("/bingohub"))
             .WithAutomaticReconnect()
             .Build();
 
@@ -696,7 +715,7 @@
     {
         StopAutoDraw();
         _ = JS.InvokeVoidAsync("eval", "if ('speechSynthesis' in window) window.speechSynthesis.cancel();");
-        Navigation.NavigateTo("/dashboard");
+        Nav.NavigateTo("/dashboard");
     }
 
     public async ValueTask DisposeAsync()
