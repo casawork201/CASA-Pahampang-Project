@@ -1,0 +1,39 @@
+@using TestWASM.AuthLib.Services
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@inject AuthService AuthService
+@implements IDisposable
+
+@if (ShouldShow)
+{
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle px-3 py-2 rounded" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="bi bi-gear-fill me-1"></span> Management ⚙️
+        </a>
+        <ul class="dropdown-menu dropdown-menu-dark shadow border-0 mt-lg-1 p-1">
+            <RoleGatedNav Roles='new[] { "Admin", "Encoder" }' Href="scorekeeper" Label="Basketball 🏀" IconClass="bi bi-stopwatch" />
+            <RoleGatedNav Roles='new[] { "Admin", "Encoder" }' Href="volleyball-scorekeeper" Label="Volleyball 🏐" IconClass="bi bi-stopwatch" />
+            <RoleGatedNav Roles='new[] { "Admin" }' Href="bingo" Label="Bingo 🎫" IconClass="bi bi-ticket-perforated" />
+
+            <li><hr class="dropdown-divider bg-secondary my-1"></li>
+            <RoleGatedNav Roles='new[] { "Admin", "Encoder" }' Href="teams/register" Label="Teams 👥" IconClass="bi bi-people-fill" />
+            <RoleGatedNav Roles='new[] { "Admin" }' Href="matches/register" Label="Matches 📅" IconClass="bi bi-calendar-check" />
+        </ul>
+    </li>
+}
+
+@code {
+    private bool ShouldShow =>
+        AuthService.IsLoggedIn &&
+        AuthService.Roles.Any(r => r.Equals("Admin", StringComparison.OrdinalIgnoreCase)
+                                 || r.Equals("Encoder", StringComparison.OrdinalIgnoreCase));
+
+    protected override void OnInitialized()
+    {
+        AuthService.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        AuthService.OnChange -= StateHasChanged;
+    }
+}

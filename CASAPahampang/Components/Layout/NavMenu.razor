@@ -15,46 +15,28 @@
 
         <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
             <ul class="navbar-nav align-items-lg-center gap-1 gap-lg-2 mt-3 mt-lg-0">
-                <li class="nav-item">
-                    <NavLink class="nav-link px-3 py-2 rounded" href="" Match="NavLinkMatch.All">
-                        <span class="bi bi-house-door-fill me-1"></span> Home 🏠
-                    </NavLink>
-                </li>
-
-                <li class="nav-item">
-                    <NavLink class="nav-link px-3 py-2 rounded" href="scoreboard">
-                        <span class="bi bi-display me-1"></span> Scoreboard 🏀
-                    </NavLink>
-                </li>
 
                 <AuthorizeView>
                     <NotAuthorized>
                         <li class="nav-item">
-                            <NavLink class="nav-link px-3 py-2 rounded" href="counter">
-                                <span class="bi bi-plus-square-fill me-1"></span> Counter 🔢
+                            <NavLink class="nav-link px-3 py-2 rounded" href="scoreboard">
+                                <span class="bi bi-display me-1"></span> Basketball 🏀
                             </NavLink>
                         </li>
                         <li class="nav-item">
-                            <NavLink class="nav-link px-3 py-2 rounded" href="weather">
-                                <span class="bi bi-list-nested me-1"></span> Weather ⛅
+                            <NavLink class="nav-link px-3 py-2 rounded" href="volleyball-scoreboard">
+                                <span class="bi bi-display me-1"></span> Volleyball 🏐
+                            </NavLink>
+                        </li>
+                        <li class="nav-item">
+                            <NavLink class="nav-link px-3 py-2 rounded" href="bingo-display">
+                                <span class="bi bi-display me-1"></span> Bingo 🎫
                             </NavLink>
                         </li>
                     </NotAuthorized>
-                    
-                    <Authorized>
-                        <li class="nav-item">
-                            <NavLink class="nav-link px-3 py-2 rounded" href="scorekeeper">
-                                <span class="bi bi-controller me-1"></span> Basketball Scorekeeper 🏀
-                            </NavLink>
-                        </li>
-
-                        <RoleGatedNav Roles='new[] { "Admin", "Encoder" }' Href="volleyball-scorekeeper" Label="Volleyball Scorekeeper 🏐" IconClass="bi bi-controller" />
-
-                        <RoleGatedNav Roles='new[] { "Admin" }' Href="admin" Label="Admin 🔐" IconClass="bi bi-shield-lock-fill" />
-
-                        <RoleGatedNav Roles='new[] { "Admin", "Encoder" }' Href="team-management" Label="Teams 👥" IconClass="bi bi-people-fill" />
-                    </Authorized>
                 </AuthorizeView>
+
+                <ManagementMenu />
 
                 <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
                     <UserMenu />
