@@ -1,0 +1,91 @@
+@page "/watch"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@implements IAsyncDisposable
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@using Microsoft.AspNetCore.SignalR.Client
+
+<h3>Live Stream Viewer 📺✨</h3>
+
+<div class="video-container mb-3 position-relative" style="width: 600px; height: 450px; background: black; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+    <video id="remoteVideo" autoplay playsinline controls style="width: 100%; height: 100%; object-fit: cover; display: @(isBroadcasting ? "block" : "none");"></video>
+    
+    @if (!isBroadcasting)
+    {
+        <div class="text-white text-center p-4 position-absolute">
+            <h4 class="text-warning mb-2">⏳ Please Stand By...</h4>
+            <p class="text-muted mb-0">Waiting for the broadcaster to go live.</p>
+        </div>
+    }
+</div>
+
+<div class="alert alert-dark">
+    <strong>Live Status / Logs:</strong> @statusMessage
+</div>
+
+@code {
+    private HubConnection? hubConnection;
+    private DotNetObjectReference<WebcamWatch>? dotNetRef;
+    private string statusMessage = "Connected to Hub. Waiting for broadcaster to go live...";
+    private bool isBroadcasting = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        dotNetRef = DotNetObjectReference.Create(this);
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/chathub"))
+            .Build();
+
+        hubConnection.On<string, string>("WebcamStarted", async (broadcasterId, user) =>
+        {
+            isBroadcasting = true;
+            statusMessage = "Broadcaster detected! Connecting automatically... 🚀";
+            StateHasChanged();
+
+            await JSRuntime.InvokeVoidAsync("connectToBroadcaster", broadcasterId);
+        });
+
+        hubConnection.On<string>("WebcamStopped", async (broadcasterId) =>
+        {
+            isBroadcasting = false;
+            statusMessage = "Broadcast ended. Please stand by... ⏳";
+            StateHasChanged();
+
+            await JSRuntime.InvokeVoidAsync("clearRemoteVideo");
+        });
+
+        hubConnection.On<string, string, string>("ReceiveSignal", async (senderId, type, payload) =>
+        {
+            await JSRuntime.InvokeVoidAsync("handleSignalingData", senderId, type, payload);
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && dotNetRef != null)
+        {
+            await JSRuntime.InvokeVoidAsync("initWebRTC", dotNetRef);
+        }
+    }
+
+    [JSInvokable]
+    public async Task SendSignal(string targetConnectionId, string type, string payload)
+    {
+        if (hubConnection != null)
+        {
+            await hubConnection.SendAsync("SendSignal", targetConnectionId, type, payload);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        dotNetRef?.Dispose();
+        await JSRuntime.InvokeVoidAsync("clearRemoteVideo");
+        if (hubConnection != null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}

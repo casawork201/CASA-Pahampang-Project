@@ -52,6 +52,14 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTWF0Y2hSZWdpc3Rlci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/WebcamBroadcast.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvV2ViY2FtQnJvYWRjYXN0LnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/WebcamWatch.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvV2ViY2FtV2F0Y2gucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/_Imports.razor]
 build_metadata.AdditionalFiles.TargetPath = X0ltcG9ydHMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 

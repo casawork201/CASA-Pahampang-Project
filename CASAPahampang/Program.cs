@@ -4,6 +4,8 @@ using System.Text.Json;
 using CASAPahampang.Components;
 using CASAPahampang.Data;
 using CASAPahampang.Hubs;
+using CASAPahampang.Interfaces;
+using CASAPahampang.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -110,7 +112,7 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole("Admin");
     });
 });
-
+builder.Services.AddHttpClient<IContentModerationService, ContentModerationService>();
 builder.Services.AddAntiforgery();
 
 var app = builder.Build();

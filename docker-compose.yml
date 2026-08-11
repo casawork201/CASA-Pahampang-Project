@@ -40,7 +40,7 @@ services:
       - AuthApiBaseUrl=https://casa-authgateway-service.taila207b7.ts.net
       - Jwt__Key=THIS_IS_A_32_CHAR_MINIMUM_SECRET_KEY!!
       - Jwt__Issuer=https://casa-authgateway-service.taila207b7.ts.net
-      - Jwt__Audience=https://casa-authgateway-service.taila207b7.ts.net
+      - Jwt__Audience=https://casa-authgateway-service.taila207b7.ts.net      
       # 🔍 Enable verbose logs for Auth & JWT debugging:
       - Logging__LogLevel__Microsoft.AspNetCore.Authentication=Debug
       - Logging__LogLevel__Microsoft.AspNetCore.Authorization=Debug
