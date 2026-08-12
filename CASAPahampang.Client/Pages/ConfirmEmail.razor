@@ -1,88 +1,69 @@
 @page "/confirm-email"
-@rendermode InteractiveWebAssembly
-@inject NavigationManager Navigation
-@inject IJSRuntime JS
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using TestWASM.AuthLib.Services
 @inject AuthService AuthService
-@inject IConfiguration Configuration
+@inject NavigationManager Nav
 
-<PageTitle>Confirming Identity | StockCore</PageTitle>
+<PageTitle>Confirm Email | CASA Pahampang</PageTitle>
 
-<div class="login-frame text-center">
-    @if (isProcessing)
-    {
-        <div class="loader-pulse"></div>
-        <h3 class="mt-4 login-status-text">SYSTEM INITIALIZING...</h3>
-        <p class="status-subtext">Synchronizing with security gateway. Please wait.</p>
-    }
-    else if (isError)
-    {
-        <div class="error-alert">🚨 @errorMessage</div>
-        <button class="btn-embark mt-4" @onclick='() => Navigation.NavigateTo("/login")'>RETURN TO LOGIN</button>
-    }
+<div class="confirm-page d-flex align-items-center justify-content-center min-vh-100 p-3">
+    <div class="confirm-card text-center">
+        @if (isLoading)
+        {
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <p class="text-muted">Confirming your account...</p>
+        }
+        else if (isSuccess)
+        {
+            <div class="success-badge mb-3">
+                <span class="bi bi-check-circle-fill"></span>
+            </div>
+            <h4 class="fw-bold">Email Confirmed! 🎉</h4>
+            <p class="text-muted small mb-4">Your account is verified and you are now signed in.</p>
+            <button class="btn-olympic w-100" @onclick='() => Nav.NavigateTo("/")'>
+                Go to Home
+            </button>
+        }
+        else
+        {
+            <div class="error-badge mb-3">
+                <span class="bi bi-x-circle-fill"></span>
+            </div>
+            <h4 class="fw-bold">Confirmation Failed</h4>
+            <p class="text-muted small mb-4">@errorMessage</p>
+            <button class="btn-olympic-outline w-100" @onclick='() => Nav.NavigateTo("/register")'>
+                Back to Register
+            </button>
+        }
+    </div>
 </div>
 
 @code {
-    // These must match the keys in your email link (?userId=...&code=...)
-    [Parameter] [SupplyParameterFromQuery(Name = "userId")] public string UserId { get; set; } = string.Empty;
-    [Parameter] [SupplyParameterFromQuery(Name = "code")] public string Code { get; set; } = string.Empty;
-    private string ApiUrl => Configuration["AuthApiBaseUrl"]?.TrimEnd('/') ?? "https://casa-authgateway-service.taila207b7.ts.net";
-    private bool isProcessing = true;
-    private bool isError = false;
-    private string? errorMessage;
+    private bool isLoading = true;
+    private bool isSuccess;
+    private string errorMessage = "This link is invalid or has expired.";
 
     protected override async Task OnInitializedAsync()
     {
-        if (string.IsNullOrEmpty(UserId) || string.IsNullOrEmpty(Code))
+        var uri = new Uri(Nav.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+
+        var userId = query["userId"];
+        var code = query["code"] ?? query["token"];
+
+        if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(code))
         {
-            isError = true;
-            isProcessing = false;
-            errorMessage = "INVALID_HANDSHAKE: MISSING_USER_OR_CODE ⚠️";
+            isLoading = false;
             return;
         }
 
-        try
+        var (success, error) = await AuthService.ConfirmEmailAsync(userId, code);
+        isSuccess = success;
+        if (!success)
         {
-            // 1. Handshake with the Gateway (5153)
-            var url = $"{ApiUrl}/api/auth/confirm-email?userId={UserId}&code={Uri.EscapeDataString(Code)}";
-            
-            var response = await AuthService.SendAuthenticatedRequestAsync(url, HttpMethod.Get, null);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                isError = true;
-                errorMessage = "ACCESS DENIED: VERIFICATION LINK EXPIRED OR INVALID ⚠️";
-                return;
-            }
-
-            // 2. Read the TokenResponseDto (Must be returned by your API)
-            var result = await response.Content.ReadFromJsonAsync<TokenResponseDto>();
-            
-            if (result is null || string.IsNullOrWhiteSpace(result.Token))
-            {
-                isError = true;
-                errorMessage = "SYSTEM ERROR: HANDSHAKE FAILED (NULL_TOKEN) ⚠️";
-                return;
-            }
-
-            // 3. Match your HandleLogin payload exactly
-            var payload = new Dictionary<string, string>
-            {
-                ["Token"] = result.Token,
-                ["RefreshToken"] = result.RefreshToken,
-                ["Email"] = result.Email ?? "Verified Operator"
-            };
-
-            // 4. Trigger the JS Sign-In
-            await JS.InvokeVoidAsync("PostToSignIn", payload);
+            errorMessage = error ?? "Email confirmation failed.";
         }
-        catch (Exception ex)
-        {
-            isError = true;
-            errorMessage = $"COMM_LINK_FAILURE: {ex.Message.ToUpper()} 📡";
-        }
-        finally
-        {
-            isProcessing = false;
-        }
+
+        isLoading = false;
     }
 }

@@ -1,0 +1,7 @@
+.confirm-page { background: linear-gradient(160deg, #f4f7f6 0%, #eafaf3 100%); }
+    .confirm-card { background: #fff; border-radius: 24px; box-shadow: 0 25px 60px -15px rgba(17,153,142,0.25); padding: 2.5rem; max-width: 420px; width: 100%; }
+    .success-badge, .error-badge { display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; font-size: 1.8rem; color: #fff; }
+    .success-badge { background: linear-gradient(135deg, #11998e, #38ef7d); }
+    .error-badge { background: linear-gradient(135deg, #dc2626, #f87171); }
+    .btn-olympic { padding: 0.75rem; font-weight: 700; color: #fff; background: linear-gradient(135deg, #11998e, #38ef7d); border: none; border-radius: 12px; }
+    .btn-olympic-outline { padding: 0.75rem; font-weight: 700; color: #11998e; background: #fff; border: 2px solid #11998e; border-radius: 12px; }
