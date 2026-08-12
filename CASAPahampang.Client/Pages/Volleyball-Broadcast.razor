@@ -1,0 +1,128 @@
+@page "/volleyball-broadcast"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@implements IAsyncDisposable
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@using Microsoft.AspNetCore.SignalR.Client
+
+<div class="broadcaster-container">
+    <h3>🏐 Volleyball Broadcaster Studio 🎙️🎥</h3>
+
+    <div class="controls-group">
+        <button class="btn btn-custom-start" @onclick="StartBroadcasting" disabled="@isBroadcasting">Start Broadcasting 🚀</button>
+        <button class="btn btn-custom-stop" @onclick="StopBroadcasting" disabled="@(!isBroadcasting)">Stop Broadcasting 🛑</button>
+    </div>
+
+    <div class="video-wrapper">
+        <video id="localVideo" autoplay playsinline muted></video>
+    </div>
+
+    <div class="status-card">
+        <strong>Live Status / Logs:</strong> @statusMessage
+    </div>
+</div>
+
+@code {
+    private HubConnection? hubConnection;
+    private bool isBroadcasting = false;
+    private string statusMessage = "Ready to broadcast volleyball.";
+    private const string RoomName = "volleyball";
+    private DotNetObjectReference<object>? dotNetRef;
+
+    protected override async Task OnInitializedAsync()
+    {
+        dotNetRef = DotNetObjectReference.Create<object>(this);
+        
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/chathub"))
+            .Build();
+
+        hubConnection.On<string, string, string>("ReceiveSignal", async (senderId, type, payload) =>
+        {
+            await JSRuntime.InvokeVoidAsync("handleSignalingData", senderId, type, payload);
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && dotNetRef != null)
+        {
+            await JSRuntime.InvokeVoidAsync("initWebRTC", dotNetRef);
+            await JSRuntime.InvokeVoidAsync("joinGameRoom", RoomName);
+        }
+    }
+
+    private async Task StartBroadcasting()
+    {
+        if (hubConnection != null)
+        {
+            isBroadcasting = true;
+            statusMessage = "Broadcasting volleyball live! Waiting for viewers...";
+            await JSRuntime.InvokeVoidAsync("startBroadcast", RoomName, "Volleyball Host");
+        }
+    }
+
+    private async Task StopBroadcasting()
+    {
+        isBroadcasting = false;
+        statusMessage = "Broadcast stopped. Ready to restart.";
+        await JSRuntime.InvokeVoidAsync("stopBroadcast");
+    }
+
+    [JSInvokable]
+    public async Task SendSignal(string targetConnectionId, string type, string payload)
+    {
+        if (hubConnection != null)
+        {
+            await hubConnection.SendAsync("SendSignal", targetConnectionId, type, payload);
+        }
+    }
+
+    [JSInvokable]
+    public async Task BroadcastWebcamStarted(string roomName, string userName)
+    {
+        if (hubConnection != null)
+        {
+            await hubConnection.SendAsync("BroadcastWebcamStarted", roomName, userName);
+        }
+    }
+
+    [JSInvokable]
+    public async Task BroadcastWebcamStopped(string roomName)
+    {
+        if (hubConnection != null)
+        {
+            await hubConnection.SendAsync("BroadcastWebcamStopped", roomName);
+        }
+    }
+
+    [JSInvokable]
+    public async Task JoinRoom(string roomName)
+    {
+        if (hubConnection != null)
+        {
+            await hubConnection.SendAsync("JoinRoom", roomName);
+        }
+    }
+
+    [JSInvokable]
+    public async Task LeaveRoom(string roomName)
+    {
+        if (hubConnection != null)
+        {
+            await hubConnection.SendAsync("LeaveRoom", roomName);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        dotNetRef?.Dispose();
+        await JSRuntime.InvokeVoidAsync("stopBroadcast");
+        if (hubConnection != null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}

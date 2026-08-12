@@ -1,9 +1,14 @@
 ﻿using CASAPahampang.Interfaces;
 using Microsoft.AspNetCore.SignalR;
+using System.Collections.Concurrent;
 
 public class ChatHub : Hub
 {
     private static int _onlineUserCount = 0;
+    
+    // 💡 Track active broadcasters per room: RoomName -> (ConnectionId, UserName)
+    private static readonly ConcurrentDictionary<string, (string ConnectionId, string UserName)> _activeBroadcasters = new();
+    
     private readonly IContentModerationService _moderationService;
 
     public ChatHub(IContentModerationService moderationService)
@@ -22,15 +27,40 @@ public class ChatHub : Hub
     {
         Interlocked.Decrement(ref _onlineUserCount);
         await Clients.All.SendAsync("UpdateOnlineCount", Math.Max(0, _onlineUserCount));
+
+        // 💡 Clean up if a broadcaster disconnects unexpectedly 🛑
+        foreach (var kvp in _activeBroadcasters)
+        {
+            if (kvp.Value.ConnectionId == Context.ConnectionId)
+            {
+                _activeBroadcasters.TryRemove(kvp.Key, out _);
+                await Clients.OthersInGroup(kvp.Key).SendAsync("WebcamStopped", Context.ConnectionId);
+                break;
+            }
+        }
+
         await base.OnDisconnectedAsync(exception);
+    }
+
+    public async Task JoinRoom(string roomName)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, roomName);
+
+        // 💡 If a broadcast is already active in this room, immediately notify the newly joined viewer! 📺✨
+        if (_activeBroadcasters.TryGetValue(roomName, out var broadcaster))
+        {
+            await Clients.Caller.SendAsync("WebcamStarted", broadcaster.ConnectionId, broadcaster.UserName);
+        }
+    }
+
+    public async Task LeaveRoom(string roomName)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomName);
     }
 
     public async Task SendChatMessage(string user, string message, string avatarUrl, DateTime timestamp)
     {
-        // Ensure the downloaded blocklists are initialized 🚀
         await _moderationService.InitializeAsync();
-
-        // Check content with the local English & Tagalog moderation service 🔍
         bool isFlagged = _moderationService.IsFlagged(message);
         string finalMessage = isFlagged ? "⚠️ [Message flagged by moderation]" : message;
 
@@ -42,13 +72,17 @@ public class ChatHub : Hub
         await Clients.Client(targetConnectionId).SendAsync("ReceiveSignal", Context.ConnectionId, type, payload);
     }
 
-    public async Task BroadcastWebcamStarted(string user)
+    public async Task BroadcastWebcamStarted(string roomName, string user)
     {
-        await Clients.Others.SendAsync("WebcamStarted", Context.ConnectionId, user);
+        // Store the active broadcast state for late-joining viewers 📝
+        _activeBroadcasters[roomName] = (Context.ConnectionId, user);
+        await Clients.OthersInGroup(roomName).SendAsync("WebcamStarted", Context.ConnectionId, user);
     }
 
-    public async Task BroadcastWebcamStopped()
+    public async Task BroadcastWebcamStopped(string roomName)
     {
-        await Clients.Others.SendAsync("WebcamStopped", Context.ConnectionId);
+        // Clear the active broadcast state 🛑
+        _activeBroadcasters.TryRemove(roomName, out _);
+        await Clients.OthersInGroup(roomName).SendAsync("WebcamStopped", Context.ConnectionId);
     }
 }

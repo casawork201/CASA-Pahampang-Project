@@ -44,6 +44,14 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = TGF5b3V0L1VzZXJNZW51LnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/BasketballBroadcast.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQmFza2V0YmFsbEJyb2FkY2FzdC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/BasketballWatch.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQmFza2V0YmFsbFdhdGNoLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
 [/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/Login.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTG9naW4ucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
@@ -52,12 +60,12 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTWF0Y2hSZWdpc3Rlci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/WebcamBroadcast.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXMvV2ViY2FtQnJvYWRjYXN0LnJhem9y
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/Volleyball-Broadcast.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvVm9sbGV5YmFsbC1Ccm9hZGNhc3QucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/WebcamWatch.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXMvV2ViY2FtV2F0Y2gucmF6b3I=
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/Volleyball-Watch.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvVm9sbGV5YmFsbC1XYXRjaC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/_Imports.razor]

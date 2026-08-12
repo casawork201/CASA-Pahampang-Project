@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CASAPahampang")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+668b6852347b7d374b0a31baf38fb25d31d289dc")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9105b605bfe9364f0e6428f93bb146f909cef926")]
 [assembly: System.Reflection.AssemblyProductAttribute("CASAPahampang")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CASAPahampang")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

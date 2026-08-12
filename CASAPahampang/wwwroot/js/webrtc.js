@@ -1,5 +1,6 @@
 let dotNetHelper;
 let localStream;
+let currentRoom = null;
 const peerConnections = {};
 
 const rtcConfig = {
@@ -14,22 +15,45 @@ window.initWebRTC = function (dotnetRef) {
     console.log("[WebRTC JS] Module initialized successfully! 🚀");
 };
 
-window.startBroadcast = async function (userName) {
+// 💡 Join a specific room (e.g., 'basketball' or 'volleyball')
+window.joinGameRoom = async function (roomName) {
+    currentRoom = roomName;
+    await dotNetHelper.invokeMethodAsync('JoinRoom', roomName);
+    console.log(`[WebRTC JS] Successfully joined room: ${roomName} 🏟️`);
+};
+
+window.startBroadcast = async function (roomName, userName) {
     try {
-        // 💡 Force cleanup any lingering stream tracks before starting a new broadcast
+        currentRoom = roomName;
+        await dotNetHelper.invokeMethodAsync('JoinRoom', roomName);
+
         if (localStream) {
             localStream.getTracks().forEach(track => track.stop());
             localStream = null;
         }
 
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        // 📱 Mobile-friendly constraints using the front camera by default
+        const constraints = {
+            video: {
+                facingMode: 'user',
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            },
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true
+            }
+        };
+
+        localStream = await navigator.mediaDevices.getUserMedia(constraints);
         const localVideo = document.getElementById('localVideo');
         if (localVideo) {
             localVideo.srcObject = localStream;
             await localVideo.play().catch(err => console.log("Local video error:", err));
         }
-        await dotNetHelper.invokeMethodAsync('BroadcastWebcamStarted', userName);
-        console.log("[WebRTC JS] Broadcast started and notification sent! 🎥✨");
+
+        await dotNetHelper.invokeMethodAsync('BroadcastWebcamStarted', roomName, userName);
+        console.log(`[WebRTC JS] Broadcast started in room '${roomName}' and notification sent! 🎥✨`);
     } catch (err) {
         console.error("[WebRTC JS] Camera error:", err);
         throw err;
@@ -49,14 +73,17 @@ window.connectToBroadcaster = async function (broadcasterId) {
 };
 
 window.stopBroadcast = async function () {
+    if (currentRoom) {
+        await dotNetHelper.invokeMethodAsync('BroadcastWebcamStopped', currentRoom);
+        await dotNetHelper.invokeMethodAsync('LeaveRoom', currentRoom);
+    }
+
     if (localStream) {
         localStream.getTracks().forEach(track => {
             track.stop();
             console.log(`[WebRTC JS] Stopped local track: ${track.kind}`);
         });
         localStream = null;
-
-        // 💡 Give the browser a brief async moment to fully release hardware camera/mic resources
         await new Promise(resolve => setTimeout(resolve, 300));
     }
 
@@ -74,6 +101,7 @@ window.stopBroadcast = async function () {
     }
     
     Object.keys(peerConnections).forEach(key => delete peerConnections[key]);
+    currentRoom = null;
     console.log("[WebRTC JS] Broadcast successfully stopped and all resources cleaned up! 🛑✨");
 };
 
@@ -103,7 +131,7 @@ function createPeerConnection(peerId, isViewer) {
         const remoteVideo = document.getElementById('remoteVideo');
         if (remoteVideo && event.streams[0]) {
             remoteVideo.srcObject = event.streams[0];
-            remoteVideo.muted = true; // Prevents autoplay policy restrictions 🛡️
+            remoteVideo.muted = true;
             remoteVideo.play().catch(e => console.log("Playback error:", e));
             console.log("[WebRTC JS] Remote stream bound and playing successfully! 📺🎉");
         }
@@ -186,7 +214,6 @@ window.clearRemoteVideo = async function() {
         remoteVideo.srcObject = null;
     }
     
-    // Clean up peer connections on the viewer side
     for (const peerId in peerConnections) {
         const pc = peerConnections[peerId];
         if (pc) {
