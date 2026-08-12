@@ -1,0 +1,367 @@
+@page "/admin"
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Authorization
+@inject IConfiguration Configuration
+@using TestWASM.AuthLib.Services
+@inject HttpClient Http
+@inject AuthService authService
+@inject NavigationManager Nav
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@inject HttpClient Http
+
+<PageTitle>Manage Identities 😊</PageTitle>
+
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Identity Manager 🔐</h3>
+            <div class="text-muted small">Global User & Role Configuration 😊</div>
+        </div>
+        <button class="btn btn-outline-primary rounded-pill px-4" @onclick="RefreshAll">
+            <span class="me-2">↻</span> Sync Systems 🚀
+        </button>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(message))
+    {
+        <div class="alert @(message.Contains("failed") || message.Contains("❌") ? "alert-danger" : "alert-success") alert-dismissible fade show mb-4" role="alert">
+            @message
+            <button type="button" class="btn-close" @onclick="() => message = string.Empty"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card iam-card h-100">
+                <div class="card-header bg-white border-0">
+                    <h5 class="mb-0">Global Roles</h5>
+                </div>
+                <div class="card-body">
+                    <EditForm Model="createRoleModel" OnValidSubmit="CreateRole" class="mb-4">
+                        <DataAnnotationsValidator />
+                        <div class="input-group">
+                            <InputText @bind-Value="createRoleModel.RoleName" class="form-control" placeholder="New designation..." />
+                            <button type="submit" class="btn btn-primary">Add ➕</button>
+                        </div>
+                    </EditForm>
+
+                    @if (roles == null)
+                    {
+                        <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+                    }
+                    else
+                    {
+                        <div class="list-group">
+                            @foreach (var role in roles)
+                            {
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>@role</span>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenEditModal(role)">✏️</button> 
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => InitiateDelete(role, true)">🗑️</button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card iam-card h-100">
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">User Directory</h5>
+                    <div class="input-group input-group-sm" style="width: 200px;">
+                        <input type="text" @bind="searchTerm" @bind:event="oninput" class="form-control" placeholder="Search..." />
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 520px;">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Account Email</th>
+                                    <th class="text-end">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (users != null)
+                                {
+                                    @foreach (var user in FilteredUsers)
+                                    {
+                                        <tr class="user-row @(lookupEmail == user.Email ? "selected" : "")" @onclick="() => SelectUser(user.Email)">
+                                            <td>@user.Email</td>
+                                            <td class="text-end">
+                                                <button class="btn btn-sm text-danger" @onclick:stopPropagation="true" @onclick="() => InitiateDelete(user.Email, false)">🗑️</button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="card iam-card">
+                <div class="card-header bg-white border-0">
+                    <h5 class="mb-0">Permissions</h5>
+                </div>
+                <div class="card-body">
+                    @if (string.IsNullOrEmpty(lookupEmail))
+                    {
+                        <div class="text-center text-muted py-4 small">Select a user to modify access. 😊</div>
+                    }
+                    else
+                    {
+                        <EditForm Model="assignModel" OnValidSubmit="AssignRole">
+                            <div class="mb-3">
+                                <label class="small fw-bold">Target User</label>
+                                <input class="form-control form-control-sm bg-light" value="@lookupEmail" readonly />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold">Available Roles</label>
+                                <InputSelect @bind-Value="assignModel.RoleName" class="form-select form-select-sm">
+                                    <option value="">-- Choose Role --</option>
+                                    @if (roles != null)
+                                    {
+                                        @foreach (var role in roles)
+                                        {
+                                            <option value="@role">@role</option>
+                                        }
+                                    }
+                                </InputSelect>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-success btn-sm">Grant Access</button>
+                                <button type="button" class="btn btn-outline-danger btn-sm" @onclick="RevokeSelectedRole">Revoke Role</button>
+                            </div>
+                        </EditForm>
+                        <hr />
+                        <h6 class="small fw-bold mb-2">Active Roles:</h6>
+                        @if (userRolesLoading)
+                        {
+                            <div class="spinner-border spinner-border-sm text-primary"></div>
+                        }
+                        else if (userRoles != null)
+                        {
+                            <div class="d-flex flex-wrap gap-1">
+                                @foreach (var role in userRoles)
+                                {
+                                    <span class="badge bg-primary">@role</span>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* --- DELETE CONFIRMATION MODAL --- *@
+@if (isDeleteModalOpen)
+{
+    <div class="modal-overlay">
+        <div class="modal-content glass-panel danger-border">
+            <div class="section-header text-danger">⚠️ SECURITY_CRITICAL: DELETE_CONFIRMATION
+                <p>You are about to delete the following entry from the core database:</p>
+                <h5>@targetToDelete</h5>
+            </div>
+            <p class="small text-muted">This action is irreversible. All associated permissions will be purged. Are you sure?</p>
+            <div class="d-flex gap-2 justify-content-end mt-4">
+                <button type="button" class="btn btn-secondary" @onclick="CloseDeleteModal">ABORT</button>
+                <button type="button" class="btn btn-danger fw-bold" @onclick="ConfirmDelete">EXECUTE_DELETE</button>
+            </div>
+        </div>
+    </div>
+}
+
+@* --- INDUSTRIAL EDIT MODAL --- *@
+@if (isEditModalOpen)
+{
+    <div class="modal-overlay">
+        <div class="modal-content glass-panel alert-border">
+            <div class="section-header text-primary">⚠ SECURITY_OVERRIDE: MODIFY_CORE</div>
+            <EditForm Model="editRoleModel" OnValidSubmit="ConfirmEditRole">
+                <DataAnnotationsValidator />
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted">TARGET: @roleBeingEdited</label>
+                    <InputText @bind-Value="editRoleModel.NewRoleName" class="form-control form-control-lg industrial-input" />
+                </div>
+                <div class="d-flex gap-2 justify-content-end">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseEditModal">ABORT</button>
+                    <button type="submit" class="btn btn-primary fw-bold">COMMIT_CHANGES</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    private List<string>? roles;
+    private List<UserDto>? users;
+    private List<string>? userRoles;
+    private string? lookupEmail;
+    private string message = "";
+    private string searchTerm = "";
+    private bool userRolesLoading;
+
+    private CreateRoleModel createRoleModel = new();
+    private UpdateRoleModel editRoleModel = new();
+    private AssignRoleModel assignModel = new();
+
+    private string? roleBeingEdited;
+    private bool isEditModalOpen;
+
+    // Delete Modal State
+    private bool isDeleteModalOpen;
+    private string targetToDelete = "";
+    private bool isDeletingRole; 
+
+    // Point requests to the correct absolute base address dynamically 🌐✨
+    @* private string ProxyBase => $"{Configuration["AuthApiBaseUrl"]?.TrimEnd('/')}/api"; *@
+    @* private string ProxyBase => "https://casa-authgateway-service.taila207b7.ts.net/api"; *@
+    private string ProxyBase => $"{Configuration["AuthApiBaseUrl"]?.TrimEnd('/')}/api";
+
+    protected override async Task OnInitializedAsync(){
+        Console.WriteLine("=== [CLIENT DEBUG] OnInitializedAsync Started ===");
+
+        if (!authService.IsInitialized)
+            await authService.InitializeAsync();
+
+        if (!authService.IsLoggedIn || !authService.Roles.Contains("Admin"))
+        {
+            Console.WriteLine("[CLIENT DEBUG] Access Denied -> Redirecting to /login");
+            Nav.NavigateTo("login");
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(authService.AccessToken))
+        {
+            Http.DefaultRequestHeaders.Authorization = 
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authService.AccessToken);
+        }
+        await RefreshAll();
+    } 
+
+    private async Task RefreshAll()
+    {
+        await Task.WhenAll(LoadRoles(), LoadUsers());
+        StateHasChanged();
+    }
+
+    private async Task LoadRoles()
+    {
+        var response = await Http.GetAsync($"{ProxyBase}/roles");
+        if (response.IsSuccessStatusCode) 
+            roles = await response.Content.ReadFromJsonAsync<List<string>>();
+    }
+
+    private async Task LoadUsers()
+    {
+        var response = await Http.GetAsync($"{ProxyBase}/users");
+        if (response.IsSuccessStatusCode) 
+            users = await response.Content.ReadFromJsonAsync<List<UserDto>>();
+    }
+
+    // Role Creation
+    private async Task CreateRole()
+    {
+        if (string.IsNullOrWhiteSpace(createRoleModel.RoleName)) return;
+        
+        var response = await Http.PostAsJsonAsync($"{ProxyBase}/roles", createRoleModel);
+        if (response.IsSuccessStatusCode) {
+            message = $"✅ Role '{createRoleModel.RoleName}' created.";
+            createRoleModel = new();
+            await LoadRoles();
+        }
+    }
+
+    // --- Safe Delete Logic ---
+    private void InitiateDelete(string target, bool isRole)
+    {
+        targetToDelete = target;
+        isDeletingRole = isRole;
+        isDeleteModalOpen = true;
+    }
+
+    private void CloseDeleteModal() => isDeleteModalOpen = false;
+
+    private async Task ConfirmDelete()
+    {
+        isDeleteModalOpen = false;
+        if (isDeletingRole) await ExecuteDeleteRole(targetToDelete);
+        else await ExecuteDeleteUser(targetToDelete);
+    }
+
+    private async Task ExecuteDeleteRole(string roleName)
+    {
+        var response = await Http.DeleteAsync($"{ProxyBase}/roles/{Uri.EscapeDataString(roleName)}");
+        if (response.IsSuccessStatusCode) {
+            message = $"🗑️ Role '{roleName}' purged.";
+            await LoadRoles();
+        }
+    }
+
+    private async Task ExecuteDeleteUser(string email)
+    {
+        var response = await Http.DeleteAsync($"{ProxyBase}/users/{Uri.EscapeDataString(email)}");
+        if (response.IsSuccessStatusCode) {
+            message = $"🗑️ User {email} purged.";
+            await LoadUsers();
+            if (lookupEmail == email) lookupEmail = null;
+        }
+    }
+
+    // Edit Role Logic
+    private void OpenEditModal(string role) {
+        roleBeingEdited = role;
+        editRoleModel = new UpdateRoleModel { NewRoleName = role };
+        isEditModalOpen = true;
+    }
+    private void CloseEditModal() => isEditModalOpen = false;
+    private async Task ConfirmEditRole() {
+        var response = await Http.PutAsJsonAsync($"{ProxyBase}/roles/{Uri.EscapeDataString(roleBeingEdited!)}", editRoleModel);
+        if (response.IsSuccessStatusCode) {
+            message = "✅ Role updated.";
+            await LoadRoles();
+            CloseEditModal();
+        }
+    }
+
+    // User Selection & Assignment
+    private async Task SelectUser(string email) {
+        lookupEmail = email;
+        assignModel.Email = email;
+        userRolesLoading = true;
+        await LookupUserRoles();
+        userRolesLoading = false;
+    }
+
+    private async Task LookupUserRoles() {
+        var response = await Http.GetAsync($"{ProxyBase}/users/{Uri.EscapeDataString(lookupEmail!)}/roles");
+        if (response.IsSuccessStatusCode) 
+            userRoles = await response.Content.ReadFromJsonAsync<List<string>>();
+    }
+
+    private async Task AssignRole() {
+        var url = $"{ProxyBase}/roles/{Uri.EscapeDataString(assignModel.RoleName)}/users/{Uri.EscapeDataString(assignModel.Email)}";
+        var response = await Http.PostAsync(url, null);
+        if (response.IsSuccessStatusCode) await LookupUserRoles();
+    }
+
+    private async Task RevokeSelectedRole() {
+        var url = $"{ProxyBase}/roles/{Uri.EscapeDataString(assignModel.RoleName)}/users/{Uri.EscapeDataString(assignModel.Email)}";
+        var response = await Http.DeleteAsync(url);
+        if (response.IsSuccessStatusCode) await LookupUserRoles();
+    }
+
+    private IEnumerable<UserDto> FilteredUsers => users?.Where(u => string.IsNullOrWhiteSpace(searchTerm) || u.Email.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ?? Enumerable.Empty<UserDto>();
+}

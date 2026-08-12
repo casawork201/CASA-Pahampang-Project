@@ -1,0 +1,113 @@
+.register-page {
+        background: linear-gradient(160deg, #f4f7f6 0%, #eafaf3 100%);
+    }
+
+    .register-card {
+        background: #fff;
+        border-radius: 24px;
+        box-shadow: 0 25px 60px -15px rgba(17, 153, 142, 0.25);
+        padding: 2.5rem;
+        max-width: 460px;
+        width: 100%;
+    }
+
+    .olympic-rings {
+        display: inline-flex;
+        gap: 6px;
+    }
+
+    .ring {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 3px solid;
+        display: inline-block;
+    }
+
+    .ring-1 { border-color: #0085c7; margin-top: 0; }
+    .ring-2 { border-color: #f4c300; margin-top: 10px; }
+    .ring-3 { border-color: #000000; margin-top: 0; }
+    .ring-4 { border-color: #009f3d; margin-top: 10px; }
+    .ring-5 { border-color: #df0024; margin-top: 0; }
+
+    .success-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #11998e, #38ef7d);
+        color: #fff;
+        font-size: 2rem;
+        box-shadow: 0 10px 25px rgba(56, 239, 125, 0.35);
+    }
+
+    .info-note {
+        background: rgba(17, 153, 142, 0.08);
+        border: 1px solid rgba(17, 153, 142, 0.2);
+        border-radius: 12px;
+        padding: 0.85rem 1rem;
+        font-size: 0.85rem;
+        color: #0d6e63;
+    }
+
+    .btn-olympic {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        padding: 0.75rem 1.5rem;
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #fff;
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 10px 22px rgba(56, 239, 125, 0.3);
+        transition: all 0.2s ease;
+    }
+
+    .btn-olympic:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 28px rgba(56, 239, 125, 0.4);
+    }
+
+    .btn-olympic:disabled {
+        opacity: 0.7;
+        cursor: default;
+    }
+
+    .btn-link-resend {
+        background: none;
+        border: none;
+        color: #11998e;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-decoration: underline;
+    }
+
+    .signin-link {
+        font-size: 0.85rem;
+        color: #64748b;
+        text-decoration: none;
+    }
+
+    .signin-link strong {
+        color: #11998e;
+    }
+
+    .validation-msg {
+        color: #dc2626;
+        font-size: 0.75rem;
+        display: block;
+        margin-top: 0.25rem;
+    }
+
+    .input-group-text {
+        border-radius: 10px 0 0 10px !important;
+    }
+
+    .input-group .form-control {
+        border-radius: 0 10px 10px 0 !important;
+    }

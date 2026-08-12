@@ -6,10 +6,14 @@ using CASAPahampang.Data;
 using CASAPahampang.Hubs;
 using CASAPahampang.Interfaces;
 using CASAPahampang.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using TestWASM.AuthLib.Models;
 using TestWASM.AuthLib.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +26,9 @@ builder.Services.AddHttpClient();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
+
+// 🔑 Bind the Jwt section to your options class so IOptions<JwtAuthOptionsDto> works correctly
+builder.Services.Configure<JwtAuthOptionsDto>(builder.Configuration.GetSection("Jwt"));
 
 builder.Services.Configure<Microsoft.AspNetCore.SignalR.HubOptions>(options =>
 {
@@ -39,70 +46,77 @@ builder.Services.AddControllers()
     .AddNewtonsoftJson(options =>
         options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
 
-// --- JWT Bearer validation (must match AuthGateway's Issuer/Audience/Key exactly) ---
-// var jwt = builder.Configuration.GetSection("Jwt");
-// var key = Encoding.UTF8.GetBytes(jwt["Key"]!);
-// --- JWT Bearer validation ---
 var jwt = builder.Configuration.GetSection("Jwt");
 var rawKey = jwt["Key"]?.Trim() ?? throw new InvalidOperationException("JWT Key is missing!");
 var key = Encoding.UTF8.GetBytes(rawKey);
+
 builder.Services.AddScoped<AuthService>();
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+{
+    options.LoginPath = "/";
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        options.RequireHttpsMetadata = false;
-        options.SaveToken = true;
-        options.TokenValidationParameters = new TokenValidationParameters
+        ValidIssuer = jwt["Issuer"]?.Trim(),
+        ValidAudience = jwt["Audience"]?.Trim(),
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateLifetime = true,
+        RoleClaimType = ClaimTypes.Role,
+        ClockSkew = TimeSpan.Zero
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
         {
-            ValidIssuer = jwt["Issuer"]?.Trim(),
-            ValidAudience = jwt["Audience"]?.Trim(),
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(key),
-            ValidateLifetime = true,
-            RoleClaimType = ClaimTypes.Role, // 🔑 Aligned with AuthGateway
-            ClockSkew = TimeSpan.Zero
-        };
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
 
-        options.Events = new JwtBearerEvents
-        {
-            OnMessageReceived = context =>
+            if (!string.IsNullOrEmpty(accessToken) && 
+            (
+                path.StartsWithSegments("/teamhub") ||
+                path.StartsWithSegments("/bingohub") ||
+                path.StartsWithSegments("/volleyballhub") ||
+                path.StartsWithSegments("/basketballhub") ||
+                path.StartsWithSegments("/chathub") ||
+                path.StartsWithSegments("/matchhub") ||
+                path.StartsWithSegments("/sportshub")))
             {
-                var accessToken = context.Request.Query["access_token"];
-                var path = context.HttpContext.Request.Path;
-
-                // 🔑 Updated to handle all registered SignalR hubs
-                if (!string.IsNullOrEmpty(accessToken) && 
-                   (path.StartsWithSegments("/teamhub") ||
-                    path.StartsWithSegments("/bingohub") ||
-                    path.StartsWithSegments("/volleyballhub") ||
-                    path.StartsWithSegments("/basketballhub") ||
-                    path.StartsWithSegments("/chathub")) ||
-                    path.StartsWithSegments("/matchhub"))
-                {
-                    context.Token = accessToken;
-                }
-                return Task.CompletedTask;
-            },
-
-            OnChallenge = context =>
-            {
-                context.HandleResponse();
-                context.Response.StatusCode = 401;
-                context.Response.ContentType = "application/json";
-
-                var errorDetails = new
-                {
-                    Message = "Unauthorized access",
-                    Error = context.Error,
-                    Description = context.ErrorDescription
-                };
-
-                return context.Response.WriteAsync(JsonSerializer.Serialize(errorDetails));
+                context.Token = accessToken;
             }
-        };
-    });
+            return Task.CompletedTask;
+        },
+
+        OnChallenge = context =>
+        {
+            context.HandleResponse();
+            context.Response.StatusCode = 401;
+            context.Response.ContentType = "application/json";
+
+            var errorDetails = new
+            {
+                Message = "Unauthorized access",
+                Error = context.Error,
+                Description = context.ErrorDescription
+            };
+
+            return context.Response.WriteAsync(JsonSerializer.Serialize(errorDetails));
+        }
+    };
+});
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("is-admin", policy =>
@@ -112,6 +126,7 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole("Admin");
     });
 });
+
 builder.Services.AddHttpClient<IContentModerationService, ContentModerationService>();
 builder.Services.AddAntiforgery();
 
@@ -139,16 +154,70 @@ app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapControllers();
-
 app.MapStaticAssets();
+app.MapGet("/blazor/signin", async (HttpContext context, IOptions<JwtAuthOptionsDto> jwtOptions) =>
+{
+    // Read parameters from the Query string since the browser navigation is a GET request
+    var token = context.Request.Query["Token"].ToString();
+    var refreshToken = context.Request.Query["RefreshToken"].ToString();
+    var email = context.Request.Query["Email"].ToString();
+
+    if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(email))
+        return Results.BadRequest("Missing token or username.");
+    
+    var validation = JwtValidator.ValidateJwt(
+        token,
+        jwtOptions.Value.Issuer,
+        jwtOptions.Value.Audience,
+        jwtOptions.Value.Key
+    );
+
+    if (!validation.IsValid) 
+        return Results.BadRequest($"Invalid token: {validation.Error}");
+
+    var jwtToken = validation.Token!;
+    var roles = jwtToken.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
+    var uid = jwtToken.Claims.FirstOrDefault(c => c.Type == "uid")?.Value ?? "";
+
+    var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.Name, email),
+        new Claim("uid", uid),
+        new Claim("JWT", token),
+        new Claim("RefreshToken", refreshToken)
+    };
+    claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
+
+    var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+    var principal = new ClaimsPrincipal(identity);
+
+    await context.SignInAsync(
+        CookieAuthenticationDefaults.AuthenticationScheme,
+        principal,
+        new AuthenticationProperties
+        {
+            IsPersistent = true,
+            AllowRefresh = true,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
+        }
+    );
+
+    context.Session.SetString("AccessToken", token);
+    context.Session.SetString("RefreshToken", refreshToken);
+    context.Session.SetString("UserRoles", System.Text.Json.JsonSerializer.Serialize(roles));
+    context.Session.SetString("Email", email);
+
+    return Results.Redirect("/");
+});
+
 app.MapRazorComponents<App>()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(CASAPahampang.Client._Imports).Assembly);
+
 app.MapHub<BingoHub>("/bingohub");
-// app.MapHub<VolleyballHub>("/volleyballhub");
-// app.MapHub<BasketballHub>("/basketballhub");
 app.MapHub<SportsHub>("/sportshub");
 app.MapHub<ChatHub>("/chathub");
 app.MapHub<TeamHub>("/teamhub");
 app.MapHub<MatchHub>("/matchhub");
+
 app.Run();

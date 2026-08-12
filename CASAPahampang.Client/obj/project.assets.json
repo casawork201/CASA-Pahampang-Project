@@ -805,7 +805,7 @@
           }
         }
       },
-      "TestWASM.AuthLib/1.0.7": {
+      "TestWASM.AuthLib/1.0.11": {
         "type": "package",
         "dependencies": {
           "Microsoft.AspNetCore.Components.Authorization": "10.0.10",
@@ -1632,7 +1632,7 @@
           }
         }
       },
-      "TestWASM.AuthLib/1.0.7": {
+      "TestWASM.AuthLib/1.0.11": {
         "type": "package",
         "dependencies": {
           "Microsoft.AspNetCore.Components.Authorization": "10.0.10",
@@ -2871,10 +2871,10 @@
         "system.identitymodel.tokens.jwt.nuspec"
       ]
     },
-    "TestWASM.AuthLib/1.0.7": {
-      "sha512": "cPMVNepGx2IRDTVp+wXl441f581RRNeSbCwWQj4xscgN3NSY2OKB0BrywRhvIpGSksE1IG9kdO+pwMFdhs0Pgw==",
+    "TestWASM.AuthLib/1.0.11": {
+      "sha512": "gZb55QHuwJYncI5qeQxLD9imwjSq68tXqw84K6QjAM1bWoMueXfvP+AqvOO5dSittjd9hbzd0R3meiPC2uhWSQ==",
       "type": "package",
-      "path": "testwasm.authlib/1.0.7",
+      "path": "testwasm.authlib/1.0.11",
       "files": [
         ".nupkg.metadata",
         "build/Microsoft.AspNetCore.StaticWebAssetEndpoints.props",
@@ -2884,7 +2884,7 @@
         "buildTransitive/TestWASM.AuthLib.props",
         "lib/net10.0/TestWASM.AuthLib.dll",
         "staticwebassets/background.png",
-        "testwasm.authlib.1.0.7.nupkg.sha512",
+        "testwasm.authlib.1.0.11.nupkg.sha512",
         "testwasm.authlib.nuspec"
       ]
     }
@@ -2897,7 +2897,7 @@
       "Microsoft.DotNet.HotReload.WebAssembly.Browser >= 10.0.110",
       "Microsoft.NET.ILLink.Tasks >= 10.0.10",
       "Microsoft.NET.Sdk.WebAssembly.Pack >= 10.0.10",
-      "TestWASM.AuthLib >= 1.0.7"
+      "TestWASM.AuthLib >= 1.0.11"
     ]
   },
   "packageFolders": {
@@ -2979,7 +2979,7 @@
           },
           "TestWASM.AuthLib": {
             "target": "Package",
-            "version": "[1.0.7, )"
+            "version": "[1.0.11, )"
           }
         },
         "imports": [

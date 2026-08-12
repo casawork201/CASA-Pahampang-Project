@@ -1,0 +1,88 @@
+@page "/confirm-email"
+@rendermode InteractiveWebAssembly
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject AuthService AuthService
+@inject IConfiguration Configuration
+
+<PageTitle>Confirming Identity | StockCore</PageTitle>
+
+<div class="login-frame text-center">
+    @if (isProcessing)
+    {
+        <div class="loader-pulse"></div>
+        <h3 class="mt-4 login-status-text">SYSTEM INITIALIZING...</h3>
+        <p class="status-subtext">Synchronizing with security gateway. Please wait.</p>
+    }
+    else if (isError)
+    {
+        <div class="error-alert">🚨 @errorMessage</div>
+        <button class="btn-embark mt-4" @onclick='() => Navigation.NavigateTo("/login")'>RETURN TO LOGIN</button>
+    }
+</div>
+
+@code {
+    // These must match the keys in your email link (?userId=...&code=...)
+    [Parameter] [SupplyParameterFromQuery(Name = "userId")] public string UserId { get; set; } = string.Empty;
+    [Parameter] [SupplyParameterFromQuery(Name = "code")] public string Code { get; set; } = string.Empty;
+    private string ApiUrl => Configuration["AuthApiBaseUrl"]?.TrimEnd('/') ?? "https://casa-authgateway-service.taila207b7.ts.net";
+    private bool isProcessing = true;
+    private bool isError = false;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrEmpty(UserId) || string.IsNullOrEmpty(Code))
+        {
+            isError = true;
+            isProcessing = false;
+            errorMessage = "INVALID_HANDSHAKE: MISSING_USER_OR_CODE ⚠️";
+            return;
+        }
+
+        try
+        {
+            // 1. Handshake with the Gateway (5153)
+            var url = $"{ApiUrl}/api/auth/confirm-email?userId={UserId}&code={Uri.EscapeDataString(Code)}";
+            
+            var response = await AuthService.SendAuthenticatedRequestAsync(url, HttpMethod.Get, null);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                isError = true;
+                errorMessage = "ACCESS DENIED: VERIFICATION LINK EXPIRED OR INVALID ⚠️";
+                return;
+            }
+
+            // 2. Read the TokenResponseDto (Must be returned by your API)
+            var result = await response.Content.ReadFromJsonAsync<TokenResponseDto>();
+            
+            if (result is null || string.IsNullOrWhiteSpace(result.Token))
+            {
+                isError = true;
+                errorMessage = "SYSTEM ERROR: HANDSHAKE FAILED (NULL_TOKEN) ⚠️";
+                return;
+            }
+
+            // 3. Match your HandleLogin payload exactly
+            var payload = new Dictionary<string, string>
+            {
+                ["Token"] = result.Token,
+                ["RefreshToken"] = result.RefreshToken,
+                ["Email"] = result.Email ?? "Verified Operator"
+            };
+
+            // 4. Trigger the JS Sign-In
+            await JS.InvokeVoidAsync("PostToSignIn", payload);
+        }
+        catch (Exception ex)
+        {
+            isError = true;
+            errorMessage = $"COMM_LINK_FAILURE: {ex.Message.ToUpper()} 📡";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+}

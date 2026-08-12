@@ -52,6 +52,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQmFza2V0YmFsbFdhdGNoLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/ConfirmEmail.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQ29uZmlybUVtYWlsLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
 [/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/Login.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTG9naW4ucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
@@ -92,6 +96,10 @@ build_metadata.AdditionalFiles.CssScope = b-ns4367438a
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvUmVjb3JkLVdpbm5lci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = b-ptuto3n0z6
 
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/RegisterPage.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvUmVnaXN0ZXJQYWdlLnJhem9y
+build_metadata.AdditionalFiles.CssScope = b-zeuhazuwcx
+
 [/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/Scorekeeper.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvU2NvcmVrZWVwZXIucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-cbg1tlwp80
@@ -99,6 +107,10 @@ build_metadata.AdditionalFiles.CssScope = b-cbg1tlwp80
 [/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/Team-Management.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvVGVhbS1NYW5hZ2VtZW50LnJhem9y
 build_metadata.AdditionalFiles.CssScope = b-thfw5slirn
+
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/User-Management.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvVXNlci1NYW5hZ2VtZW50LnJhem9y
+build_metadata.AdditionalFiles.CssScope = b-kuwyrmxc0d
 
 [/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/VolleyballScoreboard.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvVm9sbGV5YmFsbFNjb3JlYm9hcmQucmF6b3I=

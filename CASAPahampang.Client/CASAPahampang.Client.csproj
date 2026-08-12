@@ -14,6 +14,6 @@
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.10" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="TestWASM.AuthLib" Version="1.0.7" />
+    <PackageReference Include="TestWASM.AuthLib" Version="1.0.11" />
   </ItemGroup>
 </Project>

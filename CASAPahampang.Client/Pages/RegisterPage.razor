@@ -1,0 +1,169 @@
+@page "/register"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@using TestWASM.AuthLib.Services
+@using TestWASM.AuthLib.Models
+@inject AuthService AuthService
+@inject NavigationManager Nav
+
+<PageTitle>Join the Games | CASA Pahampang</PageTitle>
+
+<div class="register-page d-flex align-items-center justify-content-center min-vh-100 p-3">
+    <div class="register-card">
+        @if (isSuccess)
+        {
+            <div class="text-center py-4">
+                <div class="success-badge">
+                    <span class="bi bi-check-circle-fill"></span>
+                </div>
+                <h3 class="fw-bold mt-4 mb-1">You're In! 🎉</h3>
+                <p class="text-muted small mb-4">
+                    A verification link has been sent to<br />
+                    <strong class="text-dark">@model.Email</strong>
+                </p>
+                <div class="info-note">
+                    Check your inbox and confirm your email to unlock the dashboard.
+                </div>
+
+                <button class="btn-olympic w-100 mt-4" @onclick='() => Nav.NavigateTo("/login")'>
+                    <span>Back to Sign In</span>
+                    <i class="bi bi-arrow-right"></i>
+                </button>
+
+                <button class="btn-link-resend mt-3" @onclick="HandleRegister" disabled="@isProcessing">
+                    Didn't get the email? Resend it
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="text-center mb-4">
+                <div class="olympic-rings">
+                    <span class="ring ring-1"></span>
+                    <span class="ring ring-2"></span>
+                    <span class="ring ring-3"></span>
+                    <span class="ring ring-4"></span>
+                    <span class="ring ring-5"></span>
+                </div>
+                <h3 class="fw-bold text-dark mb-1 mt-3">Join the Games</h3>
+                <p class="text-muted small">Create your CASA Pahampang account</p>
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger d-flex align-items-center rounded-3 mb-4 py-2 px-3" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2 flex-shrink-0"></i>
+                    <div class="small fw-medium">@errorMessage</div>
+                </div>
+            }
+
+            <EditForm Model="@model" OnValidSubmit="HandleRegister">
+                <DataAnnotationsValidator />
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold text-secondary small mb-1">First Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <i class="bi bi-person"></i>
+                            </span>
+                            <InputText class="form-control bg-light border-start-0 ps-0"
+                                       placeholder="John" @bind-Value="model.FirstName" disabled="@isProcessing" />
+                        </div>
+                        <ValidationMessage For="@(() => model.FirstName)" class="validation-msg" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold text-secondary small mb-1">Last Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <i class="bi bi-person"></i>
+                            </span>
+                            <InputText class="form-control bg-light border-start-0 ps-0"
+                                       placeholder="Doe" @bind-Value="model.LastName" disabled="@isProcessing" />
+                        </div>
+                        <ValidationMessage For="@(() => model.LastName)" class="validation-msg" />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small mb-1">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted">
+                            <i class="bi bi-envelope"></i>
+                        </span>
+                        <InputText class="form-control bg-light border-start-0 ps-0"
+                                   placeholder="name@example.com" @bind-Value="model.Email" disabled="@isProcessing" />
+                    </div>
+                    <ValidationMessage For="@(() => model.Email)" class="validation-msg" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small mb-1">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted">
+                            <i class="bi bi-lock"></i>
+                        </span>
+                        <InputText type="password" class="form-control bg-light border-start-0 ps-0"
+                                   placeholder="••••••••" @bind-Value="model.Password" disabled="@isProcessing" />
+                    </div>
+                    <ValidationMessage For="@(() => model.Password)" class="validation-msg" />
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold text-secondary small mb-1">Confirm Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted">
+                            <i class="bi bi-shield-check"></i>
+                        </span>
+                        <InputText type="password" class="form-control bg-light border-start-0 ps-0"
+                                   placeholder="••••••••" @bind-Value="model.ConfirmPassword" disabled="@isProcessing" />
+                    </div>
+                    <ValidationMessage For="@(() => model.ConfirmPassword)" class="validation-msg" />
+                </div>
+
+                <button class="btn-olympic w-100" type="submit" disabled="@isProcessing">
+                    @if (isProcessing)
+                    {
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span>Creating account...</span>
+                    }
+                    else
+                    {
+                        <span>Create Account</span>
+                        <i class="bi bi-arrow-right"></i>
+                    }
+                </button>
+
+                <div class="text-center mt-4">
+                    <a href="/login" class="signin-link">Already have an account? <strong>Sign In</strong></a>
+                </div>
+            </EditForm>
+        }
+    </div>
+</div>
+
+@code {
+    private RegisterRequestDto model = new() { Role = "User" };
+    private string? errorMessage;
+    private bool isSuccess;
+    private bool isProcessing;
+
+    private async Task HandleRegister()
+    {
+        isProcessing = true;
+        errorMessage = null;
+
+        var (success, error) = await AuthService.RegisterAsync(model);
+
+        if (success)
+        {
+            isSuccess = true;
+        }
+        else
+        {
+            errorMessage = error ?? "Registration failed. Please try again.";
+        }
+
+        isProcessing = false;
+    }
+}
+
