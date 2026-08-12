@@ -1,7 +1,9 @@
 @page "/volleyball-broadcast"
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @implements IAsyncDisposable
-@inject NavigationManager Navigation
+@inject HttpClient Http
+@inject AuthService authService
+@inject NavigationManager Nav
 @inject IJSRuntime JSRuntime
 @using Microsoft.AspNetCore.SignalR.Client
 
@@ -32,9 +34,27 @@
     protected override async Task OnInitializedAsync()
     {
         dotNetRef = DotNetObjectReference.Create<object>(this);
-        
+        //This is for the authentication and authorization
+        Console.WriteLine("=== [CLIENT DEBUG] OnInitializedAsync Started ===");
+
+        if (!authService.IsInitialized)
+            await authService.InitializeAsync();
+
+        if (!authService.IsLoggedIn || !authService.Roles.Contains("Admin"))
+        {
+            Console.WriteLine("[CLIENT DEBUG] Access Denied -> Redirecting to /login");
+            Nav.NavigateTo("login");
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(authService.AccessToken))
+        {
+            Http.DefaultRequestHeaders.Authorization = 
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authService.AccessToken);
+        }
+        //Authentication and authorization ends here......
         hubConnection = new HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri("/chathub"))
+            .WithUrl(Nav.ToAbsoluteUri("/chathub"))
             .Build();
 
         hubConnection.On<string, string, string>("ReceiveSignal", async (senderId, type, payload) =>

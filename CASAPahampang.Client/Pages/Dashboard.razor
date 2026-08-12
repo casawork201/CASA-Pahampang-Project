@@ -24,11 +24,28 @@
                 <h1>CASA PAHAMPANG ⚡</h1>
             </div>
         </div>
-        <div class="live-badge">
-            <span class="pulse-dot"></span> LIVE TOURNAMENT 🔴
+        <div class="live-badge" style="background-color: rgba(25, 135, 84, 0.1); color: #198754; border: 1px solid rgba(25, 135, 84, 0.2);">
+            <span class="pulse-dot" style="background-color: #198754;"></span> LIVE TOURNAMENT 🟢
         </div>
     </header>
 
+    @* 🎥 Dedicated Quick-Access Live Streaming Banner (Green Theme) *@
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card p-3 border border-success shadow-sm rounded-3" style="background-color: #f2fdf4;">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div>
+                        <h4 class="mb-1 text-success fw-bold">🎥 Live Streaming Studios 🟢</h4>
+                        <p class="mb-0 text-muted small">Jump straight into the live action rooms below:</p>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="/watch" class="btn btn-success fw-bold px-3 py-2 shadow-sm">🏀 Basketball Live</a>
+                        <a href="/volleyball-watch" class="btn btn-success fw-bold px-3 py-2 shadow-sm">🏐 Volleyball Live</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="row">
         <div class="col-md-6 col-12">
             @if (!AllMatches.Any())
@@ -51,11 +68,15 @@
                         .Count();
 
                     <section class="sport-section">
-                        <div class="section-header">
+                        <div class="section-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                             <h2>@GetSportEmoji(sportName) @sportName</h2>
-                            <span class="game-count">
-                                @uniqueTeamsCount Teams 👥 • @matchesInSport.Count @(matchesInSport.Count == 1 ? "Match" : "Matches") 🎮
-                            </span>
+                            
+                            <div class="d-flex align-items-center gap-2">
+                                
+                                <span class="game-count">
+                                    @uniqueTeamsCount Teams 👥 • @matchesInSport.Count @(matchesInSport.Count == 1 ? "Match" : "Matches") 🎮
+                                </span>
+                            </div>
                         </div>
 
                         <div class="matches-list">
