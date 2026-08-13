@@ -5,6 +5,14 @@
 @implements IAsyncDisposable
 @rendermode InteractiveWebAssembly
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+@if (!IsAudioUnlocked)
+{
+    <div class="audio-banner" @onclick="UnlockAudio">
+        <span>🔊 Click anywhere on this banner to activate voice callouts for drawn balls!</span>
+    </div>
+}
 
 <div class="public-display-light">
     <header class="display-header">
@@ -155,6 +163,21 @@
 </div>
 
 <style>
+    .audio-banner {
+        background: #f59e0b;
+        color: #ffffff;
+        text-align: center;
+        padding: 0.75rem;
+        font-weight: 900;
+        cursor: pointer;
+        font-size: 0.95rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: background 0.2s;
+    }
+    .audio-banner:hover {
+        background: #d97706;
+    }
+
     .public-display-light {
         min-height: 100vh;
         background-color: #f1f5f9;
@@ -317,6 +340,7 @@
     private string ActivePatternName = "Straight Line";
     private bool[,] ActivePatternMatrix = new bool[5, 5];
     private bool ActivePatternIncludeFree = true;
+    private bool IsAudioUnlocked = false;
 
     private bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
 
@@ -335,13 +359,28 @@
         await hubConnection.StartAsync();
     }
 
-    private void UpdateGameState(string jsonState)
+    private async Task UnlockAudio()
+    {
+        IsAudioUnlocked = true;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("bingoAudio.announce", "Audio system activated");
+        }
+        catch
+        {
+            // Fallback
+        }
+    }
+
+    private async void UpdateGameState(string jsonState)
     {
         try
         {
             var state = System.Text.Json.JsonSerializer.Deserialize<BingoStateDto>(jsonState);
             if (state != null)
             {
+                bool isNewNumber = state.CurrentNumber != CurrentNumber && state.CurrentNumber.HasValue;
+
                 DrawnNumbers = new HashSet<int>(state.DrawnNumbers);
                 DrawHistory = state.DrawHistory;
                 CurrentNumber = state.CurrentNumber;
@@ -355,7 +394,21 @@
                             ActivePatternMatrix[r, c] = state.PatternMatrixFlat[r * 5 + c];
                 }
 
-                InvokeAsync(StateHasChanged);
+                await InvokeAsync(StateHasChanged);
+
+                if (isNewNumber && state.CurrentNumber.HasValue && IsAudioUnlocked)
+                {
+                    string letter = GetBingoLetter(state.CurrentNumber.Value);
+                    string speechText = $"{letter} {state.CurrentNumber.Value}";
+                    try
+                    {
+                        await JSRuntime.InvokeVoidAsync("bingoAudio.announce", speechText);
+                    }
+                    catch
+                    {
+                        // Safe fallback
+                    }
+                }
             }
         }
         catch

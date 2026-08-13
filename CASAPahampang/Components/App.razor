@@ -77,50 +77,52 @@
     <script>
         window.bingoAudio = {
             selectedVoiceIndex: -1,
+            voicesLoaded: false,
 
-            // Fetch only English-language browser voices
-            getVoices: function () {
-                if (!('speechSynthesis' in window)) return [];
-                let voices = window.speechSynthesis.getVoices();
-                
-                // Filter strictly for voices starting with 'en' (English)
-                return voices
-                    .map((v, i) => ({ index: i, name: v.name, lang: v.lang }))
-                    .filter(v => v.lang.toLowerCase().startsWith('en'))
-                    .map(v => ({
-                        index: v.index,
-                        name: `${v.name} (${v.lang})`
-                    }));
-            },
-
-            // Set active voice by its system index
-            setVoice: function (index) {
-                this.selectedVoiceIndex = parseInt(index);
-            },
-
-            // Announce letter and number clearly
-            announce: function (text) {
+            // Initialize and listen for asynchronous voice loading
+            init: function () {
                 if (!('speechSynthesis' in window)) return;
+                
+                const loadVoices = () => {
+                    let voices = window.speechSynthesis.getVoices();
+                    if (voices.length > 0) {
+                        this.voicesLoaded = true;
+                    }
+                };
 
-                // Clear queued audio to prevent overlapping speech threads
+                loadVoices();
+                if (window.speechSynthesis.onvoiceschanged !== undefined) {
+                    window.speechSynthesis.onvoiceschanged = loadVoices;
+                }
+            },
+
+            announce: function (text) {
+                if (!('speechSynthesis' in window)) {
+                    console.error("Speech Synthesis API is not supported in this browser.");
+                    return;
+                }
+
+                // Clear any overlapping speech threads
                 window.speechSynthesis.cancel();
 
                 setTimeout(() => {
                     let utterance = new SpeechSynthesisUtterance(text);
-                    utterance.rate = 0.9;   // Pacing for maximum caller clarity 📢
+                    utterance.rate = 0.9;   // Pacing for caller clarity 📢
                     utterance.pitch = 1.0;
                     utterance.volume = 1.0;
 
                     let voices = window.speechSynthesis.getVoices();
-                    if (voices.length > 0) {
-                        // Find chosen voice or default to the first available English voice
+                    if (voices && voices.length > 0) {
                         let chosenVoice = voices[this.selectedVoiceIndex];
-                        if (!chosenVoice || !chosenVoice.lang.toLowerCase().startsWith('en')) {
+                        if (!chosenVoice) {
                             chosenVoice = voices.find(v => v.lang.toLowerCase().startsWith('en')) || voices[0];
                         }
-                        utterance.voice = chosenVoice;
+                        if (chosenVoice) {
+                            utterance.voice = chosenVoice;
+                        }
                     }
 
+                    // Speak regardless—if the array is empty, the browser will use its default voice fallback
                     window.speechSynthesis.speak(utterance);
                 }, 50);
             },
@@ -131,6 +133,9 @@
                 }
             }
         };
+
+        // Kick off voice loading immediately
+        window.bingoAudio.init();
     </script>
     <script>
         window.bingoSync = {

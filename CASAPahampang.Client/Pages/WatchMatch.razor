@@ -7,6 +7,7 @@
 
 <PageTitle>MLBB Championship Arena | CASA Pahampang</PageTitle>
 
+
 <div class="esport-body py-4">
     <div class="container-fluid px-4">
         <div class="row g-4">
@@ -20,7 +21,7 @@
                             <h4 class="fw-bold text-dark mb-0 tracking-wide">Mobile Legends: Bang Bang Championship 🏆</h4>
                         </div>
                         <span class="badge esport-badge-room px-3 py-2 rounded-pill fw-semibold">
-                            <i class="bi bi-controller me-1 text-success"></i> TOURNAMENT ROOM 🎮
+                            <i class="bi bi-controller me-1 text-success"></i> ROOM: @RoomName 🎮
                         </span>
                     </div>
 
@@ -52,39 +53,82 @@
 
             <div class="col-lg-4">
                 <div class="card esport-card rounded-4 p-4 d-flex flex-column h-100" style="min-height: 520px;">
-                    <div class="border-bottom border-success border-opacity-25 pb-3 mb-3">
-                        <h5 class="fw-bold text-dark mb-0"><i class="bi bi-chat-square-quote-fill text-info me-2"></i> Live Arena Chat 💬</h5>
-                        <p class="text-muted small mb-0">Cheer for your team with global spectators! 🌟</p>
+                    <div class="border-bottom border-success border-opacity-25 pb-2 mb-2 d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold text-dark mb-0"><i class="bi bi-chat-square-quote-fill text-info me-2"></i> MLBB Arena Chat 💬</h5>
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2 py-1 small">
+                            @OnlineFanCount Fans Online 🟢
+                        </span>
                     </div>
 
-                    <div class="chat-messages flex-grow-1 overflow-auto pe-2 mb-3" style="max-height: 420px; min-height: 320px;">
-                        @if (_messages.Count == 0)
-                        {
-                            <div class="text-center text-muted py-5 small">
-                                <i class="bi bi-chat-heart fs-2 d-block mb-2 text-success opacity-75"></i>
-                                Arena chat is ready. Drop a message to kick things off! 🌿💬
-                            </div>
-                        }
-                        else
-                        {
-                            @foreach (var msg in _messages)
-                            {
-                                <div class="mb-2 p-2.5 rounded-3 chat-bubble text-dark small shadow-sm">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <strong class="text-success fw-bold">@msg.User</strong>
-                                        <span class="text-muted" style="font-size: 0.7rem;">@msg.Timestamp</span>
+                    <div class="chatbox-card">
+                        <div class="chatbox-user-bar">
+                            <div class="avatar-picker-wrapper">
+                                <button type="button" class="btn-avatar-select" @onclick="ToggleAvatarPicker">
+                                    <img src="@SelectedAvatarUrl" alt="Selected Avatar" class="current-avatar-preview" />
+                                    <span class="change-lbl">Avatar ✏️</span>
+                                </button>
+
+                                @if (showAvatarPicker)
+                                {
+                                    <div class="avatar-grid-dropdown">
+                                        <div class="avatar-grid-header">
+                                            <span>Choose Avatar 🎨</span>
+                                            <button type="button" class="btn-close-picker" @onclick="ToggleAvatarPicker">✕</button>
+                                        </div>
+                                        <div class="avatar-grid">
+                                            @foreach (var avatar in AvatarList)
+                                            {
+                                                <div class="avatar-item @(SelectedAvatarUrl == avatar.Url ? "selected" : "")" 
+                                                     @onclick="() => SelectAvatar(avatar.Url)">
+                                                    <img src="@avatar.Url" alt="@avatar.Name" />
+                                                    <span class="avatar-name">@avatar.Name</span>
+                                                </div>
+                                            }
+                                        </div>
                                     </div>
-                                    <div class="text-secondary text-break" style="font-size: 0.9rem;">@msg.Text</div>
+                                }
+                            </div>
+
+                            <label for="username-input" class="username-label">Name:</label>
+                            <input id="username-input" type="text" class="username-input" 
+                                   @bind="CurrentUsername" @bind:event="oninput" placeholder="Enter handle..." />
+                        </div>
+
+                        <div id="chat-messages-container" class="chatbox-messages">
+                            @if (ChatMessages.Count == 0)
+                            {
+                                <div class="text-center text-muted py-5 small my-auto">
+                                    <i class="bi bi-chat-heart fs-2 d-block mb-2 text-success opacity-75"></i>
+                                    Mobile Legends chat is ready. Drop a cheer to kick things off! 🎮💬✨
                                 </div>
                             }
-                        }
-                    </div>
+                            else
+                            {
+                                @foreach (var msg in ChatMessages)
+                                {
+                                    <div class="chat-message @(msg.IsUser ? "my-message" : "other-message")">
+                                        <img src="@msg.AvatarUrl" alt="Avatar" class="chat-avatar" />
+                                        <div class="msg-bubble">
+                                            <div class="msg-header">
+                                                <span class="msg-user">@msg.Username</span>
+                                                <span class="msg-time">@msg.TimeStamp.ToString("hh:mm tt")</span>
+                                            </div>
+                                            <div class="msg-text">@msg.Message</div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
 
-                    <div class="input-group">
-                        <input type="text" class="form-control esport-input py-2 shadow-none" placeholder="Cheer or chat..." @bind="_newMessage" @onkeyup="HandleKeyup" />
-                        <button class="btn btn-green-glow px-3 rounded-end fw-bold" @onclick="SendMessage">
-                            <i class="bi bi-send-fill"></i>
-                        </button>
+                        <div class="chatbox-footer">
+                            <input type="text" class="chat-input" placeholder="Cheer for your team in Mobile Legends..." 
+                                   @bind="NewMessageText" @bind:event="oninput" @onkeyup="HandleKeyUp" />
+                            <button class="btn-send" @onclick="SendMessage" type="button">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -99,15 +143,35 @@
     private bool isBroadcasting = false;
     private const string RoomName = "mobile-legends";
 
-    private string _newMessage = string.Empty;
-    private string _username = "Spectator_" + new Random().Next(1000, 9999);
-    private List<ChatMessage> _messages = new();
+    private string NewMessageText = string.Empty;
+    private string CurrentUsername = "Spectator_" + new Random().Next(1000, 9999);
+    private int OnlineFanCount = 1;
+    private bool shouldScrollToBottom = false;
+    private const int MaxMessageLimit = 50;
+
+    private string SelectedAvatarUrl = "https://api.dicebear.com/7.x/bottts/svg?seed=Panther";
+    private bool showAvatarPicker = false;
+
+    private List<AvatarOptionDto> AvatarList = new()
+    {
+        new AvatarOptionDto { Id = Guid.NewGuid(), Name = "Panther", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Panther" },
+        new AvatarOptionDto { Id = Guid.NewGuid(), Name = "Eagle", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Eagle" },
+        new AvatarOptionDto { Id = Guid.NewGuid(), Name = "Tiger", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Tiger" },
+        new AvatarOptionDto { Id = Guid.NewGuid(), Name = "Spiker", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Spiker" },
+        new AvatarOptionDto { Id = Guid.NewGuid(), Name = "Falcon", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Falcon" },
+        new AvatarOptionDto { Id = Guid.NewGuid(), Name = "Blaze", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Blaze" },
+        new AvatarOptionDto { Id = Guid.NewGuid(), Name = "Knight", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Knight" },
+        new AvatarOptionDto { Id = Guid.NewGuid(), Name = "Rocket", Url = "https://api.dicebear.com/7.x/bottts/svg?seed=Rocket" }
+    };
+
+    private List<ChatMessageDto> ChatMessages = new();
 
     protected override async Task OnInitializedAsync()
     {
         dotNetRef = DotNetObjectReference.Create<object>(this);
         hubConnection = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("/chathub"))
+            .WithAutomaticReconnect()
             .Build();
 
         hubConnection.On<string, string>("WebcamStarted", async (broadcasterId, user) =>
@@ -133,15 +197,27 @@
             await JSRuntime.InvokeVoidAsync("handleSignalingData", senderId, type, payload);
         });
 
-        hubConnection.On<string, string>("ReceiveMessage", (user, message) =>
+        hubConnection.On<string, string, string, DateTime>("ReceiveChatMessage", async (user, message, avatarUrl, timestamp) =>
         {
-            _messages.Add(new ChatMessage
+            bool isMe = string.Equals(user, CurrentUsername, StringComparison.OrdinalIgnoreCase);
+
+            AddChatMessage(new ChatMessageDto
             {
-                User = user,
-                Text = message,
-                Timestamp = DateTime.Now.ToString("hh:mm tt")
+                Id = Guid.NewGuid(),
+                Username = user,
+                Message = message,
+                AvatarUrl = avatarUrl,
+                TimeStamp = timestamp,
+                IsUser = isMe
             });
-            StateHasChanged();
+
+            await InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<int>("UpdateOnlineCount", async (count) =>
+        {
+            OnlineFanCount = count;
+            await InvokeAsync(StateHasChanged);
         });
 
         await hubConnection.StartAsync();
@@ -155,18 +231,106 @@
             await JSRuntime.InvokeVoidAsync("initWebRTC", dotNetRef);
             await JSRuntime.InvokeVoidAsync("joinGameRoom", RoomName);
         }
-    }
 
-    private async Task SendMessage()
-    {
-        if (!string.IsNullOrWhiteSpace(_newMessage) && hubConnection != null)
+        if (shouldScrollToBottom)
         {
-            await hubConnection.SendAsync("SendMessage", RoomName, _username, _newMessage);
-            _newMessage = string.Empty;
+            shouldScrollToBottom = false;
+            await ScrollToBottom();
         }
     }
 
-    private async Task HandleKeyup(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    private void AddChatMessage(ChatMessageDto msg)
+    {
+        ChatMessages.Add(msg);
+
+        if (ChatMessages.Count > MaxMessageLimit)
+        {
+            ChatMessages.RemoveRange(0, ChatMessages.Count - MaxMessageLimit);
+        }
+
+        shouldScrollToBottom = true;
+    }
+
+    private async Task ScrollToBottom()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("eval", "const container = document.getElementById('chat-messages-container'); if (container) { container.scrollTop = container.scrollHeight; }");
+        }
+        catch
+        {
+            // Fail silently
+        }
+    }
+
+    private void SelectAvatar(string url)
+    {
+        SelectedAvatarUrl = url;
+        showAvatarPicker = false;
+    }
+
+    private void ToggleAvatarPicker()
+    {
+        showAvatarPicker = !showAvatarPicker;
+    }
+
+    @* private async Task SendMessage()
+    {
+        if (!string.IsNullOrWhiteSpace(NewMessageText))
+        {
+            var text = NewMessageText;
+            NewMessageText = string.Empty;
+
+            var username = string.IsNullOrWhiteSpace(CurrentUsername) ? "Anonymous" : CurrentUsername.Trim();
+
+            if (hubConnection is not null && hubConnection.State == HubConnectionState.Connected)
+            {
+                await hubConnection.SendAsync("SendChatMessage", username, text, SelectedAvatarUrl, DateTime.Now);
+            }
+            else
+            {
+                AddChatMessage(new ChatMessageDto
+                {
+                    Id = Guid.NewGuid(),
+                    Username = username,
+                    Message = text,
+                    TimeStamp = DateTime.Now,
+                    IsUser = true,
+                    AvatarUrl = SelectedAvatarUrl
+                });
+            }
+        }
+    } *@
+    private async Task SendMessage()
+    {
+        if (!string.IsNullOrWhiteSpace(NewMessageText))
+        {
+            var text = NewMessageText;
+            NewMessageText = string.Empty;
+
+            var username = string.IsNullOrWhiteSpace(CurrentUsername) ? "Anonymous" : CurrentUsername.Trim();
+
+            if (hubConnection is not null && hubConnection.State == HubConnectionState.Connected)
+            {
+                // 🚀 Call the distinct method name for the room-scoped chat!
+                await hubConnection.SendAsync("SendRoomChatMessage", RoomName, username, text, SelectedAvatarUrl, DateTime.Now);
+            }
+            else
+            {
+                AddChatMessage(new ChatMessageDto
+                {
+                    Id = Guid.NewGuid(),
+                    Username = username,
+                    Message = text,
+                    TimeStamp = DateTime.Now,
+                    IsUser = true,
+                    AvatarUrl = SelectedAvatarUrl
+                });
+            }
+        }
+    }
+
+    private async Task HandleKeyUp(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
@@ -207,10 +371,20 @@
         }
     }
 
-    private class ChatMessage
+    private class ChatMessageDto
     {
-        public string User { get; set; } = string.Empty;
-        public string Text { get; set; } = string.Empty;
-        public string Timestamp { get; set; } = string.Empty;
+        public Guid Id { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public string AvatarUrl { get; set; } = string.Empty;
+        public DateTime TimeStamp { get; set; }
+        public bool IsUser { get; set; }
+    }
+
+    private class AvatarOptionDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Url { get; set; } = string.Empty;
     }
 }

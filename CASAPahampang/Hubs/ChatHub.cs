@@ -58,6 +58,16 @@ public class ChatHub : Hub
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomName);
     }
 
+    // public async Task SendChatMessage(string user, string message, string avatarUrl, DateTime timestamp)
+    // {
+    //     await _moderationService.InitializeAsync();
+    //     bool isFlagged = _moderationService.IsFlagged(message);
+    //     string finalMessage = isFlagged ? "⚠️ [Message flagged by moderation]" : message;
+
+    //     await Clients.All.SendAsync("ReceiveChatMessage", user, finalMessage, avatarUrl, timestamp);
+    // }
+// 🌟 1. Global/Legacy Chat (Safe for Dashboard and other pages)
+    // 🌍 1. Global/Legacy Chat for your Dashboard
     public async Task SendChatMessage(string user, string message, string avatarUrl, DateTime timestamp)
     {
         await _moderationService.InitializeAsync();
@@ -67,6 +77,15 @@ public class ChatHub : Hub
         await Clients.All.SendAsync("ReceiveChatMessage", user, finalMessage, avatarUrl, timestamp);
     }
 
+    // 🏟️ 2. Room-Scoped Chat for Mobile Legends (Distinct method name!)
+    public async Task SendRoomChatMessage(string roomName, string user, string message, string avatarUrl, DateTime timestamp)
+    {
+        await _moderationService.InitializeAsync();
+        bool isFlagged = _moderationService.IsFlagged(message);
+        string finalMessage = isFlagged ? "⚠️ [Message flagged by moderation]" : message;
+
+        await Clients.Group(roomName).SendAsync("ReceiveChatMessage", user, finalMessage, avatarUrl, timestamp);
+    }
     public async Task SendSignal(string targetConnectionId, string type, string payload)
     {
         await Clients.Client(targetConnectionId).SendAsync("ReceiveSignal", Context.ConnectionId, type, payload);
