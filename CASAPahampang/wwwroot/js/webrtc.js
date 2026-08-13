@@ -22,6 +22,7 @@ window.joinGameRoom = async function (roomName) {
     console.log(`[WebRTC JS] Successfully joined room: ${roomName} 🏟️`);
 };
 
+// 🏀🏐 Used for Basketball & Volleyball (Physical Camera)
 window.startBroadcast = async function (roomName, userName) {
     try {
         currentRoom = roomName;
@@ -32,7 +33,6 @@ window.startBroadcast = async function (roomName, userName) {
             localStream = null;
         }
 
-        // 📱 Mobile-friendly constraints using the front camera by default
         const constraints = {
             video: {
                 facingMode: 'user',
@@ -53,9 +53,49 @@ window.startBroadcast = async function (roomName, userName) {
         }
 
         await dotNetHelper.invokeMethodAsync('BroadcastWebcamStarted', roomName, userName);
-        console.log(`[WebRTC JS] Broadcast started in room '${roomName}' and notification sent! 🎥✨`);
+        console.log(`[WebRTC JS] Camera broadcast started in room '${roomName}'! 🎥✨`);
     } catch (err) {
         console.error("[WebRTC JS] Camera error:", err);
+        throw err;
+    }
+};
+window.startScreenBroadcast = async function (roomName, userName) {
+    try {
+        currentRoom = roomName;
+        await dotNetHelper.invokeMethodAsync('JoinRoom', roomName);
+
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+            localStream = null;
+        }
+
+        // 🚀 Optimized constraints to eliminate lag and stuttering
+        const constraints = {
+            video: {
+                cursor: "always",
+                width: { max: 1280 },
+                height: { max: 720 },
+                frameRate: { max: 30 }
+            },
+            audio: true
+        };
+
+        localStream = await navigator.mediaDevices.getDisplayMedia(constraints);
+
+        const localVideo = document.getElementById('localVideo');
+        if (localVideo) {
+            localVideo.srcObject = localStream;
+            await localVideo.play().catch(err => console.log("Local video error:", err));
+        }
+
+        localStream.getVideoTracks()[0].onended = async () => {
+            await window.stopBroadcast();
+        };
+
+        await dotNetHelper.invokeMethodAsync('BroadcastWebcamStarted', roomName, userName);
+        console.log(`[WebRTC JS] Optimized screen broadcast started in room '${roomName}'! 🚀✨`);
+    } catch (err) {
+        console.error("[WebRTC JS] Screen share error:", err);
         throw err;
     }
 };

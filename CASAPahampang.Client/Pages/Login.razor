@@ -4,71 +4,77 @@
 @inject AuthService AuthService
 @inject NavigationManager Nav
 
-<div class="d-flex align-items-center justify-content-center min-vh-100 bg-light p-3">
-    <div class="card border-0 shadow-lg rounded-4 overflow-hidden" style="max-width: 420px; width: 100%;">
-        <div class="card-body p-4 p-sm-5">
-            
-            <div class="text-center mb-4">
-                <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style="width: 56px; height: 56px;">
-                    <i class="bi bi-shield-lock-fill fs-3"></i>
+<PageTitle>Sign In | CASA Pahampang</PageTitle>
+
+<div class="login-page d-flex align-items-center justify-content-center min-vh-100 p-3">
+    <div class="login-card">
+        
+        <div class="text-center mb-4">
+            <div class="olympic-rings mb-3">
+                <span class="ring ring-1"></span>
+                <span class="ring ring-2"></span>
+                <span class="ring ring-3"></span>
+                <span class="ring ring-4"></span>
+                <span class="ring ring-5"></span>
+            </div>
+            <h3 class="fw-bold text-dark mb-1">Welcome Back</h3>
+            <p class="text-muted small">Sign in to access your CASA Pahampang dashboard</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger d-flex align-items-center rounded-3 mb-4 py-2 px-3" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2 flex-shrink-0"></i>
+                <div class="small fw-medium">@errorMessage</div>
+            </div>
+        }
+
+        <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+            <div class="mb-3">
+                <label class="form-label fw-semibold text-secondary small mb-1">Email Address</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0 text-muted">
+                        <i class="bi bi-envelope"></i>
+                    </span>
+                    <InputText class="form-control bg-light border-start-0 ps-0" 
+                               placeholder="name@example.com" 
+                               @bind-Value="loginModel.Email" 
+                               disabled="@isBusy" />
                 </div>
-                <h3 class="fw-bold text-dark mb-1">Welcome Back</h3>
-                <p class="text-muted small">Sign in to access your dashboard</p>
             </div>
 
-            @if (!string.IsNullOrEmpty(errorMessage))
-            {
-                <div class="alert alert-danger d-flex align-items-center rounded-3 mb-4 py-2 px-3" role="alert">
-                    <i class="bi bi-exclamation-triangle-fill me-2 flex-shrink-0"></i>
-                    <div class="small fw-medium">@errorMessage</div>
+            <div class="mb-4">
+                <label class="form-label fw-semibold text-secondary small mb-1">Password</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0 text-muted">
+                        <i class="bi bi-lock"></i>
+                    </span>
+                    <InputText type="password" 
+                               class="form-control bg-light border-start-0 ps-0" 
+                               placeholder="••••••••" 
+                               @bind-Value="loginModel.Password" 
+                               disabled="@isBusy" />
                 </div>
-            }
+            </div>
 
-            <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
-                <div class="mb-3">
-                    <label class="form-label fw-semibold text-secondary small mb-1">Email Address</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0 text-muted">
-                            <i class="bi bi-envelope"></i>
-                        </span>
-                        <InputText class="form-control bg-light border-start-0 ps-0" 
-                                   placeholder="name@example.com" 
-                                   @bind-Value="loginModel.Email" 
-                                   disabled="@isBusy" />
-                    </div>
-                </div>
+            <button class="btn-olympic w-100" type="submit" disabled="@isBusy">
+                @if (isBusy)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span>Signing in...</span>
+                }
+                else
+                {
+                    <span>Sign In</span>
+                    <i class="bi bi-arrow-right"></i>
+                }
+            </button>
 
-                <div class="mb-4">
-                    <label class="form-label fw-semibold text-secondary small mb-1">Password</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0 text-muted">
-                            <i class="bi bi-lock"></i>
-                        </span>
-                        <InputText type="password" 
-                                   class="form-control bg-light border-start-0 ps-0" 
-                                   placeholder="••••••••" 
-                                   @bind-Value="loginModel.Password" 
-                                   disabled="@isBusy" />
-                    </div>
-                </div>
+            <div class="text-center mt-4">
+                <a href="/register" class="signup-link">Don't have an account? <strong>Join the Games</strong></a>
+            </div>
+        </EditForm>
 
-                <button class="btn btn-primary w-100 py-2 fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2" 
-                        type="submit" 
-                        disabled="@isBusy">
-                    @if (isBusy)
-                    {
-                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                        <span>Signing in...</span>
-                    }
-                    else
-                    {
-                        <span>Sign In</span>
-                        <i class="bi bi-arrow-right"></i>
-                    }
-                </button>
-            </EditForm>
-
-        </div>
     </div>
 </div>
 

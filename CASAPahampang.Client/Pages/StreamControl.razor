@@ -1,0 +1,166 @@
+@page "/admin/mobile-legends-broadcast"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@implements IAsyncDisposable
+@inject HttpClient Http
+@inject AuthService authService
+@inject NavigationManager Nav
+@inject IJSRuntime JSRuntime
+@using Microsoft.AspNetCore.SignalR.Client
+
+<PageTitle>MLBB Broadcaster Studio | CASA Pahampang</PageTitle>
+
+<div class="broadcaster-container container py-4">
+    <div class="card border-0 shadow-lg rounded-4 p-4 bg-white">
+        <div class="text-center mb-4">
+            <span class="badge bg-danger text-white px-3 py-2 rounded-pill mb-2">🎮 LIVE BROADCASTER</span>
+            <h3 class="fw-bold text-dark">Mobile Legends Tournament Studio</h3>
+            <p class="text-muted small">Broadcast your game feed directly to viewers over WebRTC.</p>
+        </div>
+
+        <div class="controls-group d-flex justify-content-center gap-3 mb-4">
+            <button class="btn btn-danger px-4 py-2 fw-bold" @onclick="StartBroadcasting" disabled="@isBroadcasting">
+                <i class="bi bi-broadcast me-1"></i> Start Broadcasting 🚀
+            </button>
+            <button class="btn btn-outline-dark px-4 py-2 fw-bold" @onclick="StopBroadcasting" disabled="@(!isBroadcasting)">
+                <i class="bi bi-stop-circle me-1"></i> Stop Broadcasting 🛑
+            </button>
+        </div>
+
+        <div class="video-wrapper bg-dark rounded-4 overflow-hidden shadow-sm ratio ratio-16x9 mb-3">
+            <video id="localVideo" autoplay playsinline muted class="w-100 h-100 object-fit-cover"></video>
+        </div>
+
+        <div class="alert alert-secondary py-2 px-3 rounded-3 small fw-medium mb-0">
+            <i class="bi bi-info-circle-fill me-1"></i> <strong>Live Status / Logs:</strong> @statusMessage
+        </div>
+    </div>
+</div>
+
+@code {
+    private HubConnection? hubConnection;
+    private bool isBroadcasting = false;
+    private string statusMessage = "Ready to broadcast Mobile Legends.";
+    private const string RoomName = "mobile-legends";
+    private DotNetObjectReference<object>? dotNetRef;
+
+    protected override async Task OnInitializedAsync()
+    {
+        dotNetRef = DotNetObjectReference.Create<object>(this);
+        
+        if (!authService.IsInitialized)
+            await authService.InitializeAsync();
+
+        if (!authService.IsLoggedIn || !authService.Roles.Contains("Admin"))
+        {
+            Nav.NavigateTo("login");
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(authService.AccessToken))
+        {
+            Http.DefaultRequestHeaders.Authorization = 
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authService.AccessToken);
+        }
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Nav.ToAbsoluteUri("/chathub"))
+            .Build();
+
+        hubConnection.On<string, string, string>("ReceiveSignal", async (senderId, type, payload) =>
+        {
+            await JSRuntime.InvokeVoidAsync("handleSignalingData", senderId, type, payload);
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && dotNetRef != null)
+        {
+            await JSRuntime.InvokeVoidAsync("initWebRTC", dotNetRef);
+            await JSRuntime.InvokeVoidAsync("joinGameRoom", RoomName);
+        }
+    }
+@* 
+    private async Task StartBroadcasting()
+    {
+        if (hubConnection != null)
+        {
+            isBroadcasting = true;
+            statusMessage = "Broadcasting Mobile Legends live! Waiting for viewers... 🚀";
+            await JSRuntime.InvokeVoidAsync("startBroadcast", RoomName, "MLBB Tournament Host");
+        }
+    } *@
+    private async Task StartBroadcasting()
+    {
+        if (hubConnection != null)
+        {
+            isBroadcasting = true;
+            statusMessage = "Select your BlueStacks window to start streaming! 🚀";
+            await JSRuntime.InvokeVoidAsync("startScreenBroadcast", RoomName, "MLBB Tournament Host");
+        }
+    }
+
+    private async Task StopBroadcasting()
+    {
+        isBroadcasting = false;
+        statusMessage = "Broadcast stopped. Ready to restart. 🛑";
+        await JSRuntime.InvokeVoidAsync("stopBroadcast");
+    }
+
+    [JSInvokable]
+    public async Task SendSignal(string targetConnectionId, string type, string payload)
+    {
+        if (hubConnection != null)
+        {
+            await hubConnection.SendAsync("SendSignal", targetConnectionId, type, payload);
+        }
+    }
+
+    [JSInvokable]
+    public async Task BroadcastWebcamStarted(string roomName, string userName)
+    {
+        if (hubConnection != null)
+        {
+            await hubConnection.SendAsync("BroadcastWebcamStarted", roomName, userName);
+        }
+    }
+
+    [JSInvokable]
+    public async Task BroadcastWebcamStopped(string roomName)
+    {
+        if (hubConnection != null)
+        {
+            await hubConnection.SendAsync("BroadcastWebcamStopped", roomName);
+        }
+    }
+
+    [JSInvokable]
+    public async Task JoinRoom(string roomName)
+    {
+        if (hubConnection != null)
+        {
+            await hubConnection.SendAsync("JoinRoom", roomName);
+        }
+    }
+
+    [JSInvokable]
+    public async Task LeaveRoom(string roomName)
+    {
+        if (hubConnection != null)
+        {
+            await hubConnection.SendAsync("LeaveRoom", roomName);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        dotNetRef?.Dispose();
+        await JSRuntime.InvokeVoidAsync("stopBroadcast");
+        if (hubConnection != null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}

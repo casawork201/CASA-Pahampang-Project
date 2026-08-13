@@ -50,3 +50,12 @@ services:
       - ./pr-keys:/root/.aspnet/DataProtection-Keys
     depends_on:
       - ts-casawasm-app
+
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: mediamtx
+    restart: always
+    ports:
+      - "1935:1935"   # RTMP port for Windows OBS
+      - "8889:8889"   # WebRTC port for the browser viewer
+    # Notice we removed `network_mode` here so it runs on standard Docker networking!
