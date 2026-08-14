@@ -45,75 +45,69 @@
         filter: saturate(115%) contrast(105%);
     }
 
+    /* Uniform Size for All 7 Videos */
     .bg-video {
         position: absolute;
+        width: 24vw;
+        height: 24vw;
+        max-width: 280px;
+        max-height: 280px;
         border-radius: 50%;
         object-fit: cover;
-        opacity: 0.45;
+        opacity: 0.4;
         mix-blend-mode: multiply;
-        box-shadow: 0 0 40px rgba(0, 0, 0, 0.04);
+        box-shadow: 0 0 30px rgba(0, 0, 0, 0.04);
     }
 
-    /* Desktop Video Positions & Sizes */
+    /* Desktop Uniform Venn/Olympic Interlocking Cluster Layout */
+    /* Top Row (3 Uniform Rings) */
     .video-1 {
-        width: 38vw;
-        height: 38vw;
-        max-width: 480px;
-        max-height: 480px;
-        top: 10%;
-        left: 12%;
+        top: 14%;
+        left: 23%;
+        z-index: 1;
     }
 
     .video-2 {
-        width: 38vw;
-        height: 38vw;
-        max-width: 480px;
-        max-height: 480px;
-        top: 10%;
-        right: 12%;
+        top: 14%;
+        left: 38%;
+        z-index: 2;
     }
 
     .video-3 {
-        width: 35vw;
-        height: 35vw;
-        max-width: 440px;
-        max-height: 440px;
-        bottom: 5%;
-        left: 28%;
+        top: 14%;
+        left: 53%;
+        z-index: 1;
     }
 
+    /* Bottom Row (4 Uniform Rings Interlocking) */
     .video-4 {
-        width: 35vw;
-        height: 35vw;
-        max-width: 440px;
-        max-height: 440px;
-        top: 35%;
-        right: 22%;
+        top: 36%;
+        left: 15%;
+        z-index: 3;
     }
 
     .video-5 {
-        width: 34vw;
-        height: 34vw;
-        max-width: 420px;
-        max-height: 420px;
-        top: 8%;
-        left: 45%;
-        transform: translateX(-50%);
+        top: 36%;
+        left: 30%;
+        z-index: 4;
     }
 
     .video-6 {
-        width: 34vw;
-        height: 34vw;
-        max-width: 420px;
-        max-height: 420px;
-        bottom: 12%;
+        top: 36%;
+        left: 45%;
+        z-index: 3;
+    }
+
+    .video-7 {
+        top: 36%;
         left: 60%;
+        z-index: 2;
     }
 
     /* Foreground Content Wrapper */
     .content-wrapper {
         position: relative;
-        z-index: 3;
+        z-index: 10;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -149,6 +143,10 @@
         margin: 0;
         word-break: break-word;
         text-shadow: 0 2px 12px rgba(255, 255, 255, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
     }
 
     .accent-line {
@@ -226,49 +224,44 @@
         }
     }
 
-    /* Mobile Responsive Adjustments */
+    /* Mobile Responsive Adjustments (Uniform size & compact interlocking layout) */
     @media (max-width: 768px) {
         .landing-container {
             height: calc(100vh - 130px);
         }
+        .bg-video {
+            width: 36vw;
+            height: 36vw;
+            max-width: 170px;
+            max-height: 170px;
+        }
         .video-1 {
-            width: 55vw;
-            height: 55vw;
-            top: 5%;
-            left: -10%;
-            opacity: 0.35;
+            top: 10%;
+            left: 12%;
         }
         .video-2 {
-            width: 55vw;
-            height: 55vw;
             top: 10%;
-            right: -10%;
-            opacity: 0.35;
+            left: 52%;
         }
         .video-3 {
-            width: 50vw;
-            height: 50vw;
-            bottom: 10%;
-            left: -5%;
-            opacity: 0.3;
+            top: 26%;
+            left: 32%;
         }
         .video-4 {
-            width: 50vw;
-            height: 50vw;
-            top: 45%;
-            right: -10%;
-            opacity: 0.3;
+            top: 42%;
+            left: 12%;
         }
         .video-5 {
-            width: 45vw;
-            height: 45vw;
-            top: 25%;
-            left: 50%;
+            top: 42%;
+            left: 52%;
         }
         .video-6 {
-            width: 45vw;
-            height: 45vw;
-            bottom: 20%;
-            left: 30%;
+            top: 58%;
+            left: 20%;
+        }
+        .video-7 {
+            top: 58%;
+            left: 44%;
+            display: block;
         }
     }
