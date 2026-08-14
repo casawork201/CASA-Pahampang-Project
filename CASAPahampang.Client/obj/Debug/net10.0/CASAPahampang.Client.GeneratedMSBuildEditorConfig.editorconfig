@@ -52,10 +52,6 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQmFza2V0YmFsbFdhdGNoLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/MatchRegister.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTWF0Y2hSZWdpc3Rlci5yYXpvcg==
-build_metadata.AdditionalFiles.CssScope = 
-
 [/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/StreamControl.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvU3RyZWFtQ29udHJvbC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
@@ -95,6 +91,10 @@ build_metadata.AdditionalFiles.CssScope = b-ns4367438a
 [/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/Login.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTG9naW4ucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-ifr8a086gb
+
+[/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/MatchRegister.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXMvTWF0Y2hSZWdpc3Rlci5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = b-4eoyzldtog
 
 [/home/alterego/Desktop/CASAPahampang/CASAPahampang.Client/Pages/Record-Winner.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvUmVjb3JkLVdpbm5lci5yYXpvcg==

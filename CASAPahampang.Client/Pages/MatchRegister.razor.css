@@ -1,0 +1,105 @@
+/* Olympic Theme Custom Palette (Light Green, Light Blue, Light Yellow, Light Orange ONLY) */
+    .olympic-card {
+        background-color: #f4fbf7;
+    }
+
+    .olympic-header {
+        background: linear-gradient(135deg, #e3f2fd 0%, #e8f5e9 100%);
+        border-bottom: 2px solid #c8e6c9;
+    }
+
+    .olympic-icon-box {
+        background-color: #fff9c4;
+        padding: 0.5rem;
+        border-radius: 0.75rem;
+        border: 1px solid #fff59d;
+    }
+
+    .olympic-badge {
+        background-color: #fff3e0 !important;
+        color: #e65100 !important;
+        border: 1px solid #ffe0b2;
+    }
+
+    .olympic-body {
+        background: linear-gradient(180deg, #f4fbf7 0%, #e3f2fd22 100%);
+    }
+
+    /* Section Boxes using Light Blue, Light Green, Light Yellow */
+    .olympic-section-box {
+        background-color: #e3f2fd;
+        border: 1px solid #bbdefb !important;
+    }
+
+    .olympic-section-box-green {
+        background-color: #e8f5e9;
+        border: 1px solid #c8e6c9 !important;
+    }
+
+    .olympic-section-box-yellow {
+        background-color: #fffde7;
+        border: 1px solid #fff9c4 !important;
+    }
+
+    .olympic-parlor-box {
+        background-color: #fff3e0;
+        border-color: #ffe0b2 !important;
+    }
+
+    .olympic-switch-box {
+        background-color: #ffffff;
+        border-color: #ffe0b2 !important;
+    }
+
+    /* Form Controls */
+    .olympic-input {
+        background-color: #ffffff !important;
+        border: 1px solid #b0bec555;
+    }
+
+    .olympic-input:focus {
+        border-color: #81c784;
+        box-shadow: 0 0 0 0.25rem rgba(129, 199, 132, 0.25);
+    }
+
+    /* Buttons using Light Green & Light Orange accents */
+    .olympic-btn-cancel {
+        background-color: #fff3e0;
+        color: #e65100;
+        border: 1px solid #ffe0b2;
+        transition: all 0.2s ease;
+    }
+
+    .olympic-btn-cancel:hover {
+        background-color: #ffe0b2;
+        color: #bf360c;
+    }
+
+    .olympic-btn-submit {
+        background: linear-gradient(135deg, #a5d6a7 0%, #81d4fa 100%);
+        color: #1b5e20;
+        border: 1px solid #81c784;
+        transition: all 0.2s ease;
+    }
+
+    .olympic-btn-submit:hover {
+        background: linear-gradient(135deg, #81c784 0%, #4fc3f7 100%);
+        color: #0d3b10;
+        transform: translateY(-2px);
+    }
+
+    /* Animations */
+    .animate-fade-in {
+        animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-8px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }

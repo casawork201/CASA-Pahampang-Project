@@ -9,118 +9,157 @@
 @* ⚡ Disable server prerendering so this page loads strictly in WebAssembly *@
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
-<div class="container py-4" style="max-width: 800px;">
-    <div class="card shadow-sm border-0 rounded-3">
-        <div class="card-header bg-primary text-white py-3 px-4 rounded-top-3 d-flex align-items-center justify-content-between">
-            <h4 class="card-title mb-0 fw-bold">
-                🏆 Register New Match
-            </h4>
-            <span class="badge bg-white text-primary fw-semibold px-3 py-2">Admin Panel</span>
+<div class="container py-5" style="max-width: 850px;">
+    <div class="olympic-card shadow-lg border-0 rounded-4 overflow-hidden">
+        @* Card Header with Olympic Light Blue & Green Harmony *@
+        <div class="card-header py-4 px-4 d-flex align-items-center justify-content-between olympic-header">
+            <div class="d-flex align-items-center gap-3">
+                <div class="olympic-icon-box shadow-sm">
+                    <span class="fs-4">🏆</span>
+                </div>
+                <div>
+                    <h3 class="card-title mb-1 fw-bold text-dark-subtle">Register New Match</h3>
+                    <p class="mb-0 text-secondary small">Configure official game details, venues, and live Olympic statuses</p>
+                </div>
+            </div>
+            <span class="badge olympic-badge fw-bold px-3 py-2 rounded-pill shadow-sm">⚡ Admin Arena</span>
         </div>
 
-        <div class="card-body p-4">
+        <div class="card-body p-4 p-md-5 olympic-body">
             @if (teams == null)
             {
-                <div class="d-flex align-items-center justify-content-center py-5">
-                    <div class="spinner-border text-primary me-3" role="status"></div>
-                    <span class="fs-5 text-muted fw-semibold">Loading teams...</span>
+                <div class="d-flex flex-column align-items-center justify-content-center py-5">
+                    <div class="spinner-border text-success mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+                    <span class="fs-5 text-muted fw-semibold">Loading Olympic rosters...</span>
                 </div>
             }
             else
             {
                 <EditForm Model="match" OnValidSubmit="HandleSubmit">
                     <DataAnnotationsValidator />
-                    <ValidationSummary class="text-danger mb-3" />
+                    <ValidationSummary class="alert alert-warning rounded-3 mb-4 border-warning" />
 
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Game Number</label>
-                            <InputNumber @bind-Value="match.GameNumber" class="form-control" placeholder="e.g. 1" />
-                        </div>
+                    @* Section 1: General Info (Light Blue Theme Box) *@
+                    <div class="olympic-section-box p-4 rounded-4 shadow-sm mb-4 border-blue">
+                        <h5 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                            <span>📌</span> General Match Information
+                        </h5>
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold text-secondary small">Game Number</label>
+                                <InputNumber @bind-Value="match.GameNumber" class="form-control form-control-lg fs-6 olympic-input" placeholder="e.g. 1" />
+                            </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Sport Category</label>
-                            <InputSelect @bind-Value="match.Sport" class="form-select">
-                                <option value="Basketball">🏀 Basketball</option>
-                                <option value="Volleyball">🏐 Volleyball</option>
-                                <option value="Badminton">🏸 Badminton</option>
-                                <option value="Chess">♟️ Chess</option>
-                                <option value="Checkers">🔴 Checkers</option>
-                                <option value="Other">⚽ Other</option>
-                            </InputSelect>
-                        </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold text-secondary small">Sport Category</label>
+                                <InputSelect @bind-Value="match.Sport" class="form-select form-select-lg fs-6 olympic-input">
+                                    <option value="Basketball">🏀 Basketball</option>
+                                    <option value="Volleyball">🏐 Volleyball</option>
+                                    <option value="Badminton">🏸 Badminton</option>
+                                    <option value="Chess">♟️ Chess</option>
+                                    <option value="Checkers">🔴 Checkers</option>
+                                    <option value="ParlorGames">🎪 Parlor Games</option>
+                                    <option value="Other">⚽ Other</option>
+                                </InputSelect>
+                            </div>
 
-                        <div class="col-md-5">
-                            <label class="form-label fw-bold">Venue</label>
-                            <InputText @bind-Value="match.Venue" class="form-control" placeholder="e.g., Main Gym" />
-                        </div>
-                    </div>
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold text-secondary small">Venue</label>
+                                <InputText @bind-Value="match.Venue" class="form-control form-control-lg fs-6 olympic-input" placeholder="e.g., Main Gym" />
+                            </div>
 
-                    <hr class="my-4 text-muted opacity-25" />
-
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Team 1</label>
-                            <InputSelect @bind-Value="match.Team1Id" class="form-select">
-                                <option value="@Guid.Empty">-- Select Team 1 --</option>
-                                @foreach (var team in teams)
-                                {
-                                    <option value="@team.Id">@team.Name</option>
-                                }
-                            </InputSelect>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Team 2</label>
-                            <InputSelect @bind-Value="match.Team2Id" class="form-select">
-                                <option value="@Guid.Empty">-- Select Team 2 --</option>
-                                @foreach (var team in teams)
-                                {
-                                    <option value="@team.Id" disabled="@(team.Id == match.Team1Id)">@team.Name</option>
-                                }
-                            </InputSelect>
+                            @* Conditional Input for Parlor Games (Light Orange / Yellow Highlight Box) *@
+                            @if (match.Sport == "ParlorGames")
+                            {
+                                <div class="col-12 mt-3 animate-fade-in">
+                                    <div class="p-3 olympic-parlor-box rounded-3 border">
+                                        <label class="form-label fw-bold text-dark small mb-1">
+                                            🎪 Specific Parlor Game Name
+                                        </label>
+                                        <InputText @bind-Value="customParlorGameName" class="form-control olympic-input" placeholder="e.g., Trip to Jerusalem, Sack Race, Tug of War" />
+                                        <div class="form-text text-muted small mt-1">
+                                            Formatted output preview: <code class="text-success fw-semibold">[Parlor Games] @(string.IsNullOrWhiteSpace(customParlorGameName) ? "Game Name" : customParlorGameName)</code>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
                         </div>
                     </div>
 
-                    <hr class="my-4 text-muted opacity-25" />
+                    @* Section 2: Team Matchup (Light Green Theme Box) *@
+                    <div class="olympic-section-box-green p-4 rounded-4 shadow-sm mb-4 border-green">
+                        <h5 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                            <span>⚔️</span> Team Matchup Roster
+                        </h5>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary small">Team 1</label>
+                                <InputSelect @bind-Value="match.Team1Id" class="form-select form-select-lg fs-6 olympic-input">
+                                    <option value="@Guid.Empty">-- Select Team 1 --</option>
+                                    @foreach (var team in teams)
+                                    {
+                                        <option value="@team.Id">@team.Name</option>
+                                    }
+                                </InputSelect>
+                            </div>
 
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Match Schedule</label>
-                            <InputText @bind-Value="match.MatchSchedule" class="form-control" placeholder="e.g., 8:00 PM PHT" />
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Status Text</label>
-                            <InputText @bind-Value="match.StatusText" class="form-control" placeholder="e.g., Q4 02:45 or Final" />
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Period Details</label>
-                            <InputText @bind-Value="match.PeriodDetails" class="form-control" placeholder="e.g., 4th Quarter or Set 3" />
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary small">Team 2</label>
+                                <InputSelect @bind-Value="match.Team2Id" class="form-select form-select-lg fs-6 olympic-input">
+                                    <option value="@Guid.Empty">-- Select Team 2 --</option>
+                                    @foreach (var team in teams)
+                                    {
+                                        <option value="@team.Id" disabled="@(team.Id == match.Team1Id)">@team.Name</option>
+                                    }
+                                </InputSelect>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="form-check form-switch mb-4 p-3 bg-light rounded border">
-                        <InputCheckbox @bind-Value="match.IsLive" class="form-check-input ms-0 me-2" id="isLive" />
-                        <label class="form-check-label fw-bold text-dark" for="isLive">
-                            Mark Match as Currently Live 🔴
-                        </label>
+                    @* Section 3: Schedule & Live Status (Light Yellow/Orange Theme Box) *@
+                    <div class="olympic-section-box-yellow p-4 rounded-4 shadow-sm mb-4 border-yellow">
+                        <h5 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                            <span>⏰</span> Schedule & Status Configuration
+                        </h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold text-secondary small">Match Schedule</label>
+                                <InputText @bind-Value="match.MatchSchedule" class="form-control olympic-input" placeholder="e.g., 8:00 PM PHT" />
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold text-secondary small">Status Text</label>
+                                <InputText @bind-Value="match.StatusText" class="form-control olympic-input" placeholder="e.g., Q4 02:45 or Final" />
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold text-secondary small">Period Details</label>
+                                <InputText @bind-Value="match.PeriodDetails" class="form-control olympic-input" placeholder="e.g., 4th Quarter or Set 3" />
+                            </div>
+                        </div>
+
+                        <div class="form-check form-switch p-3 olympic-switch-box rounded-3 border d-flex align-items-center gap-3 mb-0">
+                            <InputCheckbox @bind-Value="match.IsLive" class="form-check-input fs-4 ms-0 olympic-checkbox" id="isLive" style="cursor: pointer;" />
+                            <label class="form-check-label fw-bold text-dark mb-0" for="isLive" style="cursor: pointer;">
+                                Mark Match as Currently Live 🔴
+                            </label>
+                        </div>
                     </div>
 
-                    <div class="d-flex justify-content-end gap-2">
-                        <button type="button" class="btn btn-outline-secondary px-4" @onclick='() => Nav.NavigateTo("/")'>
+                    @* Form Action Buttons *@
+                    <div class="d-flex justify-content-end gap-3 pt-2">
+                        <button type="button" class="btn olympic-btn-cancel px-4 py-2 fw-semibold rounded-pill" @onclick='() => Nav.NavigateTo("/")'>
                             Cancel
                         </button>
-                        <button type="submit" class="btn btn-primary px-4 fw-bold" disabled="@isSubmitting">
+                        <button type="submit" class="btn olympic-btn-submit px-5 py-2 fw-bold rounded-pill shadow-sm" disabled="@isSubmitting">
                             @if (isSubmitting)
                             {
                                 <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                <span>Saving...</span>
+                                <span>Saving Match...</span>
                             }
                             else
                             {
-                                <span>Save Match</span>
+                                <span>💾 Save Match</span>
                             }
                         </button>
                     </div>
@@ -130,10 +169,12 @@
     </div>
 </div>
 
+
 @code {
     private MatchDto match = new();
     private List<TeamDto>? teams;
     private bool isSubmitting = false;
+    private string? customParlorGameName;
 
     protected override async Task OnInitializedAsync()
     {
@@ -170,6 +211,13 @@
         if (match.Team1Id == Guid.Empty || match.Team2Id == Guid.Empty)
         {
             return;
+        }
+
+        // Format sport string if ParlorGames is chosen
+        if (match.Sport == "ParlorGames")
+        {
+            var gameTitle = string.IsNullOrWhiteSpace(customParlorGameName) ? "General Game" : customParlorGameName.Trim();
+            match.Sport = $"[Parlor Games] {gameTitle}";
         }
 
         isSubmitting = true;
