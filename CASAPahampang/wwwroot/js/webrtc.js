@@ -9,7 +9,29 @@ const rtcConfig = {
         { urls: 'stun:stun1.l.google.com:19302' }
     ]
 };
+// Toggles fullscreen for the given element id. Falls back gracefully across
+// browser vendor prefixes and does nothing if the element can't be found.
+window.toggleFullscreen = function (elementId) {
+    const el = document.getElementById(elementId);
+    if (!el) {
+        console.warn(`[WebRTC JS] toggleFullscreen: element '${elementId}' not found. ⚠️`);
+        return;
+    }
 
+    const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+
+    if (!isFullscreen) {
+        if (el.requestFullscreen) el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        else if (el.msRequestFullscreen) el.msRequestFullscreen();
+        console.log('[WebRTC JS] Entered fullscreen mode. 📺');
+    } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if (document.msExitFullscreen) document.msExitFullscreen();
+        console.log('[WebRTC JS] Exited fullscreen mode. ⏹️');
+    }
+};
 window.initWebRTC = function (dotnetRef) {
     dotNetHelper = dotnetRef;
     console.log("[WebRTC JS] Module initialized successfully! 🚀");
@@ -114,8 +136,12 @@ window.connectToBroadcaster = async function (broadcasterId) {
 
 window.stopBroadcast = async function () {
     if (currentRoom) {
-        await dotNetHelper.invokeMethodAsync('BroadcastWebcamStopped', currentRoom);
-        await dotNetHelper.invokeMethodAsync('LeaveRoom', currentRoom);
+        try {
+            await dotNetHelper.invokeMethodAsync('BroadcastWebcamStopped', currentRoom);
+            await dotNetHelper.invokeMethodAsync('LeaveRoom', currentRoom);
+        } catch (err) {
+            console.warn('[WebRTC JS] stopBroadcast cleanup call failed (likely a navigation race):', err);
+        }
     }
 
     if (localStream) {
@@ -139,7 +165,7 @@ window.stopBroadcast = async function () {
             console.log(`[WebRTC JS] Closed peer connection for peer: ${peerId}`);
         }
     }
-    
+
     Object.keys(peerConnections).forEach(key => delete peerConnections[key]);
     currentRoom = null;
     console.log("[WebRTC JS] Broadcast successfully stopped and all resources cleaned up! 🛑✨");

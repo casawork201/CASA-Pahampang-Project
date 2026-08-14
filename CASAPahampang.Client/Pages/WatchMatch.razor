@@ -25,16 +25,16 @@
                         </span>
                     </div>
 
-                    <div class="video-wrapper bg-black rounded-4 overflow-hidden position-relative ratio ratio-16x9 mb-3 shadow-lg flex-grow-1 border border-light" id="videoContainer">
+                   <div class="video-wrapper bg-black rounded-4 overflow-hidden position-relative ratio ratio-16x9 mb-3 shadow-lg flex-grow-1 border border-light" id="videoContainer">
                         <video id="remoteVideo" autoplay playsinline controls style="display: @(isBroadcasting ? "block" : "none");" class="w-100 h-100 object-fit-cover"></video>
-                        
+
                         @if (isBroadcasting)
                         {
-                            <button class="position-absolute bottom-0 end-0 m-3 btn btn-info btn-sm text-white rounded-pill px-3 py-2 shadow border-0 fw-bold z-3" @onclick="TriggerFullscreen">
+                            <button class="btn-fullscreen-fixed position-absolute bottom-0 end-0 m-3 btn btn-info btn-sm text-white rounded-pill px-3 py-2 shadow border-0 fw-bold z-3" @onclick="TriggerFullscreen">
                                 <i class="bi bi-fullscreen me-1"></i> Fullscreen 📺
                             </button>
                         }
-                        
+
                         @if (!isBroadcasting)
                         {
                             <div class="standby-overlay d-flex flex-column align-items-center justify-content-center text-dark p-4 text-center bg-white bg-opacity-90">
@@ -337,10 +337,16 @@
             await SendMessage();
         }
     }
-
     private async Task TriggerFullscreen()
     {
-        await JSRuntime.InvokeVoidAsync("toggleFullscreen", "videoContainer");
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("toggleFullscreen", "videoContainer");
+        }
+        catch (JSException ex)
+        {
+            Console.WriteLine($"[Blazor] Fullscreen toggle failed: {ex.Message}");
+        }
     }
 
     [JSInvokable]

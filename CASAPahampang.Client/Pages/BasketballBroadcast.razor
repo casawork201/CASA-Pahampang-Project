@@ -137,11 +137,35 @@
             await hubConnection.SendAsync("LeaveRoom", roomName);
         }
     }
-
+@* 
     public async ValueTask DisposeAsync()
     {
         dotNetRef?.Dispose();
         await JSRuntime.InvokeVoidAsync("stopBroadcast");
+        if (hubConnection != null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    } *@
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("stopBroadcast");
+        }
+        catch (JSDisconnectedException)
+        {
+            // Browser/circuit already tore down the JS side — nothing left to clean up.
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[DisposeAsync] stopBroadcast cleanup failed: {ex.Message}");
+        }
+        finally
+        {
+            dotNetRef?.Dispose();
+        }
+
         if (hubConnection != null)
         {
             await hubConnection.DisposeAsync();

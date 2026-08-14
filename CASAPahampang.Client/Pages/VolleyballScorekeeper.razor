@@ -12,213 +12,198 @@
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 
-<div class="scorekeeper-container w-100 container-fluid px-2 px-md-3 py-3" style="max-width: 100% !important;">
-    <header class="dashboard-header d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3">
-        <div class="header-left d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 gap-sm-3">
+<div class="scorekeeper-container">
+    <header class="dashboard-header">
+        <div class="header-left">
             <button class="btn-back" @onclick="GoBack" type="button">
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-                Dashboard
+                <span class="btn-back-label">Dashboard</span>
             </button>
             <div class="header-title">
                 <p class="branding-subtitle">CENTRAL AZUCARERA DE SAN ANTONIO</p>
-                <h1>VOLLEYBALL SCOREKEEPER CONSOLE 🏐⚡</h1>
+                <h1>Volleyball Scorekeeper</h1>
             </div>
         </div>
-        <div class="live-badge align-self-start align-self-md-center">
-            <span class="pulse-dot"></span> MATCH IN PROGRESS 🔴
+        <div class="live-badge">
+            <span class="pulse-dot"></span> LIVE
         </div>
     </header>
 
-    <div class="match-selector-card mb-4 p-3 rounded w-100" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15);">
-        <div class="row align-items-center w-100 m-0">
-            <div class="col-md-7 col-12 mb-2 mb-md-0 px-0">
-                <label class="form-label text-light fw-bold small text-uppercase mb-1">
-                    🏐 Select Active Match (Excludes "Concluded" Matches)
-                </label>
-                <select class="form-select form-select-lg bg-dark text-light border-secondary w-100" @onchange="OnMatchSelected">
-                    <option value="">-- Choose a Volleyball Match --</option>
-                    @foreach (var match in AvailableMatches)
-                    {
-                        <option value="@match.Id" selected="@(SelectedMatch?.Id == match.Id)">
-                            GAME @match.GameNumber: @(match.Team1?.Name ?? "TBD") vs @(match.Team2?.Name ?? "TBD") | @match.Venue (@(string.IsNullOrWhiteSpace(match.StatusText) ? "Scheduled" : match.StatusText))
-                        </option>
-                    }
-                </select>
+    <div class="match-selector-card">
+        <label class="form-label" for="matchSelect">Active match <span class="label-hint">(concluded matches hidden)</span></label>
+        <select id="matchSelect" class="match-select" @onchange="OnMatchSelected">
+            <option value="">— Choose a volleyball match —</option>
+            @foreach (var match in AvailableMatches)
+            {
+                <option value="@match.Id" selected="@(SelectedMatch?.Id == match.Id)">
+                    GAME @match.GameNumber: @(match.Team1?.Name ?? "TBD") vs @(match.Team2?.Name ?? "TBD") · @match.Venue (@(string.IsNullOrWhiteSpace(match.StatusText) ? "Scheduled" : match.StatusText))
+                </option>
+            }
+        </select>
+        @if (SelectedMatch != null)
+        {
+            <div class="match-status-row">
+                <span class="badge badge-active">GAME @SelectedMatch.GameNumber · @SelectedMatch.Sport</span>
+                <button class="btn-conclude" @onclick="ConcludeMatchAsync" title="Mark match as Concluded">
+                    Conclude match
+                </button>
             </div>
-            <div class="col-md-5 col-12 text-md-end text-start d-flex align-items-center justify-content-md-end gap-2 mt-2 mt-md-0 px-0">
-                @if (SelectedMatch != null)
-                {
-                    <span class="badge bg-success px-3 py-2">
-                        Active: GAME @SelectedMatch.GameNumber (@SelectedMatch.Sport) 🏆
-                    </span>
-                    <button class="btn btn-danger btn-sm px-3 py-2 fw-bold" @onclick="ConcludeMatchAsync" title="Mark match as Concluded">
-                        🏁 Conclude Match
-                    </button>
-                }
-                else
-                {
-                    <span class="badge bg-warning text-dark px-3 py-2">
-                        ⚠️ Please Select a Match
-                    </span>
-                }
+        }
+        else
+        {
+            <div class="match-status-row">
+                <span class="badge badge-warning">Select a match to begin</span>
             </div>
-        </div>
+        }
     </div>
 
     @if (SelectedMatch == null)
     {
-        <div class="alert alert-info text-center py-5 rounded my-4 w-100">
-            <h4>No Active Volleyball Match Selected 🏐</h4>
-            <p class="mb-0">Please select an ongoing or upcoming match from the dropdown above to begin scoring.</p>
+        <div class="empty-state">
+            <h4>No match selected</h4>
+            <p>Choose an ongoing or upcoming volleyball match above to start scoring.</p>
         </div>
     }
     else
     {
-        <div class="scoreboard-main d-flex flex-column flex-lg-row w-100 gap-3 align-items-stretch">
-            <div class="team-panel flex-fill @(ServingTeam == 1 ? "is-serving" : "")" style="order: @(IsSidesSwitched ? 3 : 1); min-width: 0;">
-                <div class="team-header">
-                    <img src="@Team1LogoUrl" alt="@Team1Name Logo" class="team-logo-lg" />
-                    <h2>@Team1Name</h2>
+        <!-- Everything needed to score a rally lives in this one screen: no scrolling
+             between "see the score" and "tap the buttons" on a phone. -->
+        <div class="scoreboard-bar">
+            <div class="sb-team sb-team-blue @(ServingTeam == 1 ? "is-serving" : "")" style="order: @(IsSidesSwitched ? 3 : 1);">
+                <span class="sb-name">@Team1Name</span>
+                <span class="sb-score">@Team1Score</span>
+                <span class="sb-sets">Sets <strong>@Team1SetsWon</strong></span>
+            </div>
+
+            <div class="sb-set-block" style="order: 2;">
+                <span class="sb-set-label">SET</span>
+                <span class="sb-set-number">@CurrentSetNumber</span>
+                <div class="sb-set-actions">
+                    <button class="btn-finish-set" @onclick="FinishCurrentSet">Finish set</button>
+                    <button class="btn-switch-sides" @onclick="SwitchSides" aria-label="Switch sides" title="Switch sides">⇄</button>
+                </div>
+            </div>
+
+            <div class="sb-team sb-team-green @(ServingTeam == 2 ? "is-serving" : "")" style="order: @(IsSidesSwitched ? 1 : 3);">
+                <span class="sb-sets">Sets <strong>@Team2SetsWon</strong></span>
+                <span class="sb-score">@Team2Score</span>
+                <span class="sb-name">@Team2Name</span>
+            </div>
+        </div>
+
+        <div class="team-controls-grid">
+            <div class="team-panel team-panel-blue @(ServingTeam == 1 ? "is-serving" : "")" style="order: @(IsSidesSwitched ? 3 : 1);">
+                <div class="team-panel-head">
+                    <img src="@Team1LogoUrl" alt="@Team1Name Logo" class="team-logo-sm" />
+                    <span class="team-panel-name">@Team1Name</span>
                 </div>
 
-                <div class="team-status-bar">
-                    <button class="btn-serve @(ServingTeam == 1 ? "active" : "")" @onclick="() => SetServer(1)">
-                        🏐 @(ServingTeam == 1 ? "SERVING" : "SET SERVE")
-                    </button>
-                    <div class="sets-won-badge">
-                        SETS WON: <strong>@Team1SetsWon</strong>
-                    </div>
-                </div>
-
-                <div class="big-score-display">
-                    @Team1Score
-                </div>
+                <button class="btn-serve @(ServingTeam == 1 ? "active" : "")" @onclick="() => SetServer(1)">
+                    🏐 @(ServingTeam == 1 ? "Serving" : "Set serve")
+                </button>
 
                 <div class="score-controls">
-                    <button class="btn-score btn-add" @onclick="() => AddPoint(1)">+1 POINT ➕</button>
-                    <button class="btn-score btn-sub" @onclick="() => SubtractPoint(1)">-1 ➖</button>
+                    <button class="btn-score btn-add" @onclick="() => AddPoint(1)">+1 point</button>
+                    <button class="btn-score btn-sub" @onclick="() => SubtractPoint(1)">−1</button>
                 </div>
 
                 <div class="team-extra-controls">
                     <div class="stat-box">
-                        <span>TIMEOUTS (MAX 2) ⏱️</span>
+                        <span>Timeouts <em>(max 2)</em></span>
                         <div class="stat-counter">
-                            <button @onclick="() => ChangeTimeouts(1, -1)">-</button>
+                            <button @onclick="() => ChangeTimeouts(1, -1)" aria-label="Decrease timeouts">−</button>
                             <strong>@Team1Timeouts</strong>
-                            <button @onclick="() => ChangeTimeouts(1, 1)">+</button>
+                            <button @onclick="() => ChangeTimeouts(1, 1)" aria-label="Increase timeouts">+</button>
                         </div>
                     </div>
                     <div class="stat-box">
-                        <span>SUBS (MAX 6) 🔄</span>
+                        <span>Subs <em>(max 6)</em></span>
                         <div class="stat-counter">
-                            <button @onclick="() => ChangeSubs(1, -1)">-</button>
+                            <button @onclick="() => ChangeSubs(1, -1)" aria-label="Decrease subs">−</button>
                             <strong>@Team1Subs</strong>
-                            <button @onclick="() => ChangeSubs(1, 1)">+</button>
+                            <button @onclick="() => ChangeSubs(1, 1)" aria-label="Increase subs">+</button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="center-console flex-shrink-0" style="order: 2; width: 100%;">
-                <div class="set-indicator-card">
-                    <span class="set-label">CURRENT MATCH STATUS</span>
-                    <div class="current-set-title">SET @CurrentSetNumber 📊</div>
-                    <div class="match-format-tag">Best of 5 • First to 25 pts</div>
+            <div class="team-panel team-panel-green @(ServingTeam == 2 ? "is-serving" : "")" style="order: @(IsSidesSwitched ? 1 : 3);">
+                <div class="team-panel-head team-panel-head-right">
+                    <span class="team-panel-name">@Team2Name</span>
+                    <img src="@Team2LogoUrl" alt="@Team2Name Logo" class="team-logo-sm" />
                 </div>
 
-                <div class="set-actions-card">
-                    <button class="btn-action btn-finish-set" @onclick="FinishCurrentSet">
-                        🏆 FINISH SET @CurrentSetNumber
-                    </button>
-                    <button class="btn-action btn-switch-sides" @onclick="SwitchSides">
-                        🔄 SWITCH SIDES
-                    </button>
-                </div>
-
-                <div class="set-history-card">
-                    <h3>Set History 📜</h3>
-                    @if (CompletedSets.Count == 0)
-                    {
-                        <p class="empty-history">No sets completed yet.</p>
-                    }
-                    else
-                    {
-                        <div class="table-responsive">
-                            <table class="history-table">
-                                <thead>
-                                    <tr>
-                                        <th>Set</th>
-                                        <th>@Team1Name</th>
-                                        <th>@Team2Name</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var set in CompletedSets)
-                                    {
-                                        <tr>
-                                            <td>Set @set.SetNumber</td>
-                                            <td class="@(set.Team1Score > set.Team2Score ? "winner-score" : "")">@set.Team1Score</td>
-                                            <td class="@(set.Team2Score > set.Team1Score ? "winner-score" : "")">@set.Team2Score</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                </div>
-            </div>
-
-            <div class="team-panel flex-fill @(ServingTeam == 2 ? "is-serving" : "")" style="order: @(IsSidesSwitched ? 1 : 3); min-width: 0;">
-                <div class="team-header">
-                    <img src="@Team2LogoUrl" alt="@Team2Name Logo" class="team-logo-lg" />
-                    <h2>@Team2Name</h2>
-                </div>
-
-                <div class="team-status-bar">
-                    <button class="btn-serve @(ServingTeam == 2 ? "active" : "")" @onclick="() => SetServer(2)">
-                        🏐 @(ServingTeam == 2 ? "SERVING" : "SET SERVE")
-                    </button>
-                    <div class="sets-won-badge">
-                        SETS WON: <strong>@Team2SetsWon</strong>
-                    </div>
-                </div>
-
-                <div class="big-score-display">
-                    @Team2Score
-                </div>
+                <button class="btn-serve @(ServingTeam == 2 ? "active" : "")" @onclick="() => SetServer(2)">
+                    🏐 @(ServingTeam == 2 ? "Serving" : "Set serve")
+                </button>
 
                 <div class="score-controls">
-                    <button class="btn-score btn-add" @onclick="() => AddPoint(2)">+1 POINT ➕</button>
-                    <button class="btn-score btn-sub" @onclick="() => SubtractPoint(2)">-1 ➖</button>
+                    <button class="btn-score btn-add" @onclick="() => AddPoint(2)">+1 point</button>
+                    <button class="btn-score btn-sub" @onclick="() => SubtractPoint(2)">−1</button>
                 </div>
 
                 <div class="team-extra-controls">
                     <div class="stat-box">
-                        <span>TIMEOUTS (MAX 2) ⏱️</span>
+                        <span>Timeouts <em>(max 2)</em></span>
                         <div class="stat-counter">
-                            <button @onclick="() => ChangeTimeouts(2, -1)">-</button>
+                            <button @onclick="() => ChangeTimeouts(2, -1)" aria-label="Decrease timeouts">−</button>
                             <strong>@Team2Timeouts</strong>
-                            <button @onclick="() => ChangeTimeouts(2, 1)">+</button>
+                            <button @onclick="() => ChangeTimeouts(2, 1)" aria-label="Increase timeouts">+</button>
                         </div>
                     </div>
                     <div class="stat-box">
-                        <span>SUBS (MAX 6) 🔄</span>
+                        <span>Subs <em>(max 6)</em></span>
                         <div class="stat-counter">
-                            <button @onclick="() => ChangeSubs(2, -1)">-</button>
+                            <button @onclick="() => ChangeSubs(2, -1)" aria-label="Decrease subs">−</button>
                             <strong>@Team2Subs</strong>
-                            <button @onclick="() => ChangeSubs(2, 1)">+</button>
+                            <button @onclick="() => ChangeSubs(2, 1)" aria-label="Increase subs">+</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="log-section w-100 mt-3">
-            <h3>📋 Match Log</h3>
+        <details class="set-history-section">
+            <summary>Set history <span class="log-count">(@CompletedSets.Count)</span></summary>
+            <div class="set-history-body">
+                <div class="match-format-tag">Best of 5 · first to 25 pts</div>
+                @if (CompletedSets.Count == 0)
+                {
+                    <p class="empty-history">No sets completed yet.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Set</th>
+                                    <th>@Team1Name</th>
+                                    <th>@Team2Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var set in CompletedSets)
+                                {
+                                    <tr>
+                                        <td>Set @set.SetNumber</td>
+                                        <td class="@(set.Team1Score > set.Team2Score ? "winner-score" : "")">@set.Team1Score</td>
+                                        <td class="@(set.Team2Score > set.Team1Score ? "winner-score" : "")">@set.Team2Score</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </details>
+
+        <details class="log-section">
+            <summary>Match log <span class="log-count">(@ActionLogs.Count)</span></summary>
             <div class="log-box">
                 @if (ActionLogs.Count == 0)
                 {
-                    <div class="empty-log">No match events logged yet. 📭</div>
+                    <div class="empty-log">No match events logged yet.</div>
                 }
                 else
                 {
@@ -233,7 +218,7 @@
                     </ul>
                 }
             </div>
-        </div>
+        </details>
     }
 </div>
 
