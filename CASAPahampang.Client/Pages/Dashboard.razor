@@ -81,7 +81,7 @@
                         </div>
 
                         <div class="matches-list">
-                            @foreach (var match in matchesInSport)
+                            @foreach (var match in matchesInSport.OrderBy(t=>t.GameNumber))
                             {
                                 <div class="match-row">
                                     <div class="match-info">
@@ -287,7 +287,7 @@
         {
             var dbMatches = await Http.GetFromJsonAsync<List<MatchDto>>(Navigation.ToAbsoluteUri("api/matches")) ?? new();
             
-            foreach (var match in dbMatches)
+            foreach (var match in dbMatches.OrderBy(t=>t.GameNumber))
             {
                 match.IsLive = false;
             }

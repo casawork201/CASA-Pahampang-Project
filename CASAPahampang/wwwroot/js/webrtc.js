@@ -57,7 +57,7 @@ window.startBroadcast = async function (roomName, userName) {
 
         const constraints = {
             video: {
-                facingMode: 'user',
+                facingMode: { ideal: 'environment' }, // prefer rear camera; falls back instead of hard-failing if unavailable
                 width: { ideal: 1280 },
                 height: { ideal: 720 }
             },
